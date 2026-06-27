@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament\Pages;
 
-use Filament\Actions\Action;
+use Filament\Actions\Action as TableAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -30,9 +29,9 @@ class ApiTokens extends Page implements HasTable
 {
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-key';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-key';
 
-    protected static string $view = 'ai-gateway::filament.pages.api-tokens';
+    protected string $view = 'ai-gateway::filament.pages.api-tokens';
 
     protected static ?string $title = 'API tokens';
 

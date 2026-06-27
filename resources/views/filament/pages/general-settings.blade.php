@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <x-filament-panels::form wire:submit="save">
+    <form wire:submit="save" class="grid gap-y-6">
         {{ $this->form }}
 
         <div class="flex justify-start">
@@ -7,5 +7,5 @@
                 Save
             </x-filament::button>
         </div>
-    </x-filament-panels::form>
+    </form>
 </x-filament-panels::page>

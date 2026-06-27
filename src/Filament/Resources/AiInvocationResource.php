@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Andre\AiGateway\Filament\Resources;
 
 use Andre\AiGateway\Models\AiInvocation;
+use Filament\Actions\ViewAction;
 use Filament\Forms;
 use Filament\Infolists;
-use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Schemas;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -20,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class AiInvocationResource extends Resource
 {
-    protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar';
 
     public static function getModel(): string
     {
@@ -138,16 +140,16 @@ class AiInvocationResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make()
+                ViewAction::make()
                     ->modalHeading('Invocation detail'),
             ])
             ->poll('30s');
     }
 
-    public static function infolist(Infolist $infolist): Infolist
+    public static function infolist(Schema $schema): Schema
     {
-        return $infolist->schema([
-            Infolists\Components\Section::make('Call')
+        return $schema->components([
+            Schemas\Components\Section::make('Call')
                 ->columns(3)
                 ->schema([
                     Infolists\Components\TextEntry::make('integration_slug_snapshot')->label('Integration'),
@@ -160,7 +162,7 @@ class AiInvocationResource extends Resource
                     Infolists\Components\TextEntry::make('model_used')->label('Used')->placeholder('—'),
                     Infolists\Components\TextEntry::make('created_at')->dateTime(),
                 ]),
-            Infolists\Components\Section::make('Usage & cost')
+            Schemas\Components\Section::make('Usage & cost')
                 ->columns(3)
                 ->schema([
                     Infolists\Components\TextEntry::make('prompt_tokens')->numeric()->placeholder('—'),
@@ -181,7 +183,7 @@ class AiInvocationResource extends Resource
                         ->color('primary')
                         ->tooltip('Open in OpenRouter logs (new tab) — click to copy the id.'),
                 ]),
-            Infolists\Components\Section::make('Error')
+            Schemas\Components\Section::make('Error')
                 ->visible(fn ($record): bool => $record->status === 'error')
                 ->schema([
                     Infolists\Components\TextEntry::make('error_class')->placeholder('—'),

@@ -5,6 +5,14 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-06-27
+
+### Changed
+- **Filament 4 + 5 support.** The admin UI is ported to Filament's v4/v5 Schema API: forms/infolists are `Schema`, layout components + `Get`/`Set` moved under `Filament\Schemas`, actions unified under `Filament\Actions`, v5 non-static page `$view`, and `BackedEnum|string|null` navigation-icon types. The engine (gateway, services, models, HTTP API, OpenAPI, conversations, migrations) is unchanged.
+
+### Compatibility
+- `^2.0` requires **Filament 4 or 5**. For **Filament 3**, use the `^1.0` line. Composer picks the right one for your Filament version.
+
 ## [1.3.1] - 2026-06-27
 
 ### Added

@@ -6,14 +6,14 @@ namespace Andre\AiGateway\Filament\Pages;
 
 use Andre\AiGateway\Services\OpenRouterModelCatalog;
 use Andre\AiGateway\Support\Settings;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 
 /**
  * Runtime, admin-editable gateway settings backed by {@see Settings}.
@@ -21,15 +21,15 @@ use Filament\Pages\Page;
  * These flip behaviour without a redeploy: the HTTP API master switch and the
  * AI prompt builder (on/off + which model it uses).
  *
- * @property Form $form
+ * @property Schema $form
  */
 class GeneralSettings extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static string $view = 'ai-gateway::filament.pages.general-settings';
+    protected string $view = 'ai-gateway::filament.pages.general-settings';
 
     protected static ?string $title = 'General settings';
 
@@ -57,10 +57,10 @@ class GeneralSettings extends Page implements HasForms
         ]);
     }
 
-    public function form(Form $form): Form
+    public function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
+        return $schema
+            ->components([
                 Section::make('HTTP API')
                     ->schema([
                         Toggle::make('api_enabled')

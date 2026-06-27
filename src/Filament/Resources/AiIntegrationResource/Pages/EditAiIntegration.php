@@ -22,8 +22,8 @@ class EditAiIntegration extends EditRecord
     {
         return [
             // A page-header (Filament\Actions\Action) Test action that reuses the
-            // resource's shared form schema + run logic. The table uses the
-            // Tables\Actions\Action variant; page headers require this class.
+            // resource's shared form schema + run logic. In Filament v5 all
+            // actions are unified into Filament\Actions\Action.
             Actions\Action::make('test')
                 ->label('Test')
                 ->icon('heroicon-m-play')

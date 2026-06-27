@@ -13,15 +13,19 @@ use Andre\AiGateway\Services\AiIntegrationService;
 use Andre\AiGateway\Services\OpenRouterModelCatalog;
 use Andre\AiGateway\Services\PromptBuilderService;
 use Andre\AiGateway\Services\PromptRenderer;
+use Filament\Actions\Action;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
 use Filament\Forms;
-use Filament\Forms\Components\Component;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
-use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
+use Filament\Schemas;
+use Filament\Schemas\Components\Component;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -41,7 +45,7 @@ use Throwable;
  */
 class AiIntegrationResource extends Resource
 {
-    protected static ?string $navigationIcon = 'heroicon-o-sparkles';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-sparkles';
 
     public static function getModel(): string
     {
@@ -70,15 +74,15 @@ class AiIntegrationResource extends Resource
         return array_combine(PromptRenderer::VALID_TYPES, PromptRenderer::VALID_TYPES);
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
 
             // Row 1: Identity + Models side by side.
-            Forms\Components\Grid::make(2)->schema([
+            Schemas\Components\Grid::make(2)->schema([
 
                 // (a) Identity ----------------------------------------------------
-                Forms\Components\Section::make('Identity')
+                Schemas\Components\Section::make('Identity')
                     ->description('Stable registry fields. The slug is the call key and cannot change after creation.')
                     ->schema([
                         Forms\Components\TextInput::make('slug')
@@ -101,7 +105,7 @@ class AiIntegrationResource extends Resource
                     ->columnSpan(1),
 
                 // (b) Models ------------------------------------------------------
-                Forms\Components\Section::make('Models')
+                Schemas\Components\Section::make('Models')
                     ->description('Pick from the live OpenRouter catalog. The primary is tried first; fallbacks follow in order.')
                     ->schema([
                         Forms\Components\Select::make('primary_model')
@@ -157,7 +161,7 @@ class AiIntegrationResource extends Resource
             // (c) Prompt + variables -----------------------------------------
             // Variables are declared via a modal ("Manage variables"); the
             // prompt composer's side panel lists them for click-to-insert.
-            Forms\Components\Section::make('System prompt')
+            Schemas\Components\Section::make('System prompt')
                 ->description('The template rendered before each call. Use {{snake_case}} placeholders for runtime variables.')
                 ->headerActions([
                     static::manageVariablesAction(),
@@ -189,7 +193,7 @@ class AiIntegrationResource extends Resource
                 ]),
 
             // (e) Generation params ------------------------------------------
-            Forms\Components\Section::make('Generation parameters')
+            Schemas\Components\Section::make('Generation parameters')
                 ->description('Default OpenRouter params. max_tokens and temperature live here.')
                 ->schema([
                     Forms\Components\KeyValue::make('default_params')
@@ -219,13 +223,13 @@ class AiIntegrationResource extends Resource
                 ]),
 
             // Row: Server tools + Limits + Visibility in three columns.
-            Forms\Components\Grid::make(3)->schema([
+            Schemas\Components\Grid::make(3)->schema([
 
                 // (f) Server tools ------------------------------------------------
-                Forms\Components\Section::make('Server tools')
+                Schemas\Components\Section::make('Server tools')
                     ->description('OpenRouter-hosted tools the model may call. Persisted into the server_tools shape.')
                     ->schema([
-                        Forms\Components\Fieldset::make('Web search')
+                        Schemas\Components\Fieldset::make('Web search')
                             ->schema([
                                 Forms\Components\Toggle::make('server_tools_web_search_enabled')
                                     ->label('Enable web search'),
@@ -247,7 +251,7 @@ class AiIntegrationResource extends Resource
                                     ->visible(fn (Get $get): bool => (bool) $get('server_tools_web_search_enabled')),
                             ])
                             ->columns(1),
-                        Forms\Components\Fieldset::make('Web fetch')
+                        Schemas\Components\Fieldset::make('Web fetch')
                             ->schema([
                                 Forms\Components\Toggle::make('server_tools_web_fetch_enabled')
                                     ->label('Enable web fetch'),
@@ -268,7 +272,7 @@ class AiIntegrationResource extends Resource
                     ->columnSpan(1),
 
                 // (g) Limits ------------------------------------------------------
-                Forms\Components\Section::make('Limits')
+                Schemas\Components\Section::make('Limits')
                     ->schema([
                         Forms\Components\TextInput::make('rate_limit_per_minute')
                             ->numeric()
@@ -284,7 +288,7 @@ class AiIntegrationResource extends Resource
                     ->columnSpan(1),
 
                 // (h) Visibility & status ----------------------------------------
-                Forms\Components\Section::make('Visibility & status')
+                Schemas\Components\Section::make('Visibility & status')
                     ->schema([
                         Forms\Components\Select::make('visibility')
                             ->options([
@@ -362,13 +366,13 @@ class AiIntegrationResource extends Resource
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                EditAction::make(),
                 static::testAction(),
                 static::versionsAction(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
                 ]),
             ]);
     }
@@ -391,9 +395,9 @@ class AiIntegrationResource extends Resource
      * `prompt_args` in a modal (kept out of the main layout since the prompt
      * composer's side panel already lists them for click-to-insert).
      */
-    public static function manageVariablesAction(): Forms\Components\Actions\Action
+    public static function manageVariablesAction(): Action
     {
-        return Forms\Components\Actions\Action::make('manageVariables')
+        return Action::make('manageVariables')
             ->label('Manage variables')
             ->icon('heroicon-m-variable')
             ->modalHeading('Declare variables')
@@ -438,9 +442,9 @@ class AiIntegrationResource extends Resource
      * "Draft with AI" — a form header action on the system-prompt section.
      * Only shown when the prompt builder is available (key set + enabled).
      */
-    public static function draftWithAiAction(): Forms\Components\Actions\Action
+    public static function draftWithAiAction(): Action
     {
-        return Forms\Components\Actions\Action::make('draftWithAi')
+        return Action::make('draftWithAi')
             ->label('Draft with AI')
             ->icon('heroicon-m-sparkles')
             ->visible(fn (): bool => app(PromptBuilderService::class)->isAvailable())
@@ -483,9 +487,9 @@ class AiIntegrationResource extends Resource
      * modal form built from its prompt_args. Reused on the table and the edit
      * header. Disabled when there is no active version.
      */
-    public static function testAction(): Tables\Actions\Action
+    public static function testAction(): Action
     {
-        return Tables\Actions\Action::make('test')
+        return Action::make('test')
             ->label('Test')
             ->icon('heroicon-m-play')
             ->color('gray')
@@ -629,9 +633,9 @@ class AiIntegrationResource extends Resource
     /**
      * "Versions" — list this integration's versions with an Activate button.
      */
-    public static function versionsAction(): Tables\Actions\Action
+    public static function versionsAction(): Action
     {
-        return Tables\Actions\Action::make('versions')
+        return Action::make('versions')
             ->label('Versions')
             ->icon('heroicon-m-clock')
             ->color('gray')

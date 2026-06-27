@@ -17,3 +17,7 @@ parameters:
         # which larastan can't see on the framework's base User type.
         - identifier: method.notFound
           path: src/Http/Controllers/InvokeAiIntegrationController.php
+        # larastan can't resolve the package's namespaced Blade view
+        # (ai-gateway::docs) at analysis time; it exists at runtime.
+        - message: '#expects view-string\|null, string given#'
+          path: src/Http/Controllers/OpenApiController.php

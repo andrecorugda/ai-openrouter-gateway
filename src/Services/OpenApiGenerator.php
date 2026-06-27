@@ -272,7 +272,9 @@ class OpenApiGenerator
     }
 
     /**
-     * @return array<string,mixed>
+     * Keys are HTTP status codes; PHP casts the numeric-string keys to int.
+     *
+     * @return array<int|string,mixed>
      */
     private function commonResponses(): array
     {

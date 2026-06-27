@@ -16,9 +16,9 @@ use Filament\Pages\Page;
  */
 class ApiDocs extends Page
 {
-    protected static ?string $navigationIcon = 'heroicon-o-book-open';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
 
-    protected static string $view = 'ai-gateway::filament.pages.api-docs';
+    protected string $view = 'ai-gateway::filament.pages.api-docs';
 
     protected static ?string $title = 'API docs';
 

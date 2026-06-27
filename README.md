@@ -74,7 +74,16 @@ Swap `anthropic/claude-sonnet-4` for `openai/gpt-4o` or `google/gemini-2.5-pro` 
 - PHP 8.2+
 - Laravel 11, 12, or 13
 - An [OpenRouter](https://openrouter.ai) API key
-- Filament 3.2+ *(optional — only for the admin UI; use a Filament release that supports your Laravel version)*
+- **Filament 4 or 5** for the admin UI *(optional)* — see version compatibility below
+
+## Version compatibility
+
+| Package | Filament |
+|---|---|
+| `^2.0` | **4.x / 5.x** |
+| `^1.0` | **3.x** |
+
+Composer installs the right line for your Filament version automatically — `composer require andrecorugda/ai-openrouter-gateway`.
 
 ## Installation
 
