@@ -34,77 +34,11 @@ In short: prompts and models become **configuration**, not code — owned by the
 
 ### Who uses it (use cases)
 
-```mermaid
-flowchart LR
-    DEV(["Developer / PHP service"])
-    EXT(["External app / other codebase"])
-    ADMIN(["Admin / non-developer"])
-
-    subgraph SYS["AI OpenRouter Gateway"]
-        UC1("Invoke an integration")
-        UC2("Hold a multi-turn conversation")
-        UC3("Create &amp; version integrations")
-        UC4("Draft a prompt with AI")
-        UC5("Test the same use case across models")
-        UC6("Review invocations, cost &amp; tokens")
-        UC7("Mint / revoke API tokens")
-        UC8("Toggle the API &amp; settings")
-    end
-
-    DEV --> UC1
-    DEV --> UC2
-    EXT -->|"HTTPS + token"| UC1
-    EXT -->|"HTTPS + token"| UC2
-    ADMIN --> UC3
-    ADMIN --> UC4
-    ADMIN --> UC5
-    ADMIN --> UC6
-    ADMIN --> UC7
-    ADMIN --> UC8
-```
+![Use case diagram](screenshots/usecases.png)
 
 ### Architecture
 
-```mermaid
-flowchart TB
-    PHP["PHP code &amp; jobs<br/>AiGateway facade"]
-    HTTP["External apps<br/>HTTPS + Sanctum token"]
-    UI["Admins<br/>Filament panel"]
-
-    subgraph PKG["AI OpenRouter Gateway (package)"]
-        direction TB
-        GW["AiGateway<br/>invoke · chat · converse"]
-        RES["AiIntegrationResolver<br/>(cached lookup)"]
-        PR["PromptRenderer<br/>variable substitution"]
-        UG["UsageGuard<br/>rate + cost limits"]
-        CS["ConversationStore<br/>threads"]
-        CAT["OpenRouterModelCatalog<br/>live model list"]
-        ORC["OpenRouterClient<br/>HTTP transport"]
-    end
-
-    DB[("Database<br/>integrations · versions<br/>invocations · conversations · settings")]
-    OR["OpenRouter API"]
-    MODELS["Anthropic · OpenAI · Google · DeepSeek · …"]
-
-    PHP --> GW
-    HTTP -->|"/chat · /start · /converse"| GW
-    UI -->|"manage rows"| DB
-    UI -->|"Test · Draft with AI"| GW
-    UI --> CAT
-
-    GW --> RES
-    GW --> PR
-    GW --> UG
-    GW --> CS
-    GW --> ORC
-    RES --> DB
-    UG --> DB
-    CS --> DB
-    GW -->|"writes telemetry"| DB
-    CAT --> OR
-    ORC --> OR
-    OR --> MODELS
-```
+![Architecture diagram](screenshots/architecture.png)
 
 **Request flow (one call):** resolve the integration's active version (cached) → render the prompt template with the caller's args → enforce rate + daily-cost limits → compose the OpenRouter payload (model[s], params, server tools, optional cache markers) → call OpenRouter → write an `ai_invocations` telemetry row (cost / tokens / latency / status) → return a typed `AiResult`. Conversational calls additionally load and persist thread turns via `ConversationStore`.
 

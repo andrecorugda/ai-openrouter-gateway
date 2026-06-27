@@ -23,8 +23,21 @@ abstract class TestCase extends Orchestra
         // table (needed by the feature test's Sanctum user).
         $this->loadLaravelMigrations();
 
-        // The package's own tables.
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        // The package's own tables, run in DEPENDENCY order. (loadMigrationsFrom
+        // orders by filename, which would run the conversation-flags ALTER before
+        // the integrations CREATE — `add_` sorts before `create_`. Real apps are
+        // fine: spatie publishes these with sequential timestamps in this order.)
+        foreach ([
+            'create_ai_integrations_table',
+            'create_ai_integration_versions_table',
+            'create_ai_invocations_table',
+            'create_ai_gateway_settings_table',
+            'create_ai_conversations_table',
+            'create_ai_conversation_messages_table',
+            'add_conversation_flags_to_ai_integrations_table',
+        ] as $migration) {
+            (require __DIR__."/../database/migrations/{$migration}.php")->up();
+        }
 
         // Sanctum's personal_access_tokens table. Defined inline rather than
         // relying on Sanctum's published migration so the suite is hermetic
