@@ -24,7 +24,9 @@ Each AI use case is a **named integration** with a versioned prompt template, a 
 - 🔑 **API token management** — mint and revoke scoped tokens from the admin UI.
 - 🔎 **OpenRouter server tools** — per-version `web_search` / `web_fetch`.
 - ✨ **AI prompt builder** — describe what you want; a fast Haiku drafts the template + variables.
-- 🎛️ **Filament admin UI** — integration CRUD, version history, a live test panel, invocation log, settings.
+- 🗂️ **Live model catalog** — searchable model picker from OpenRouter's `/models`, with per-model generation params and caching eligibility.
+- 📊 **Invocations browser** — read-only telemetry with status/caller/date filters, cost + token Σ summaries, and per-call detail.
+- 🎛️ **Filament admin UI** — integration CRUD, versions (load-into-form), a live test panel, an interactive prompt editor, settings.
 - ⚙️ **Fully configurable** — connection, table names, route prefix/middleware, cache store, limits, models.
 
 ## Requirements
@@ -167,10 +169,22 @@ public function panel(Panel $panel): Panel
 
 You get:
 
-- **AI Integrations** — create/edit integrations, manage versions, and a **Test** panel that runs a draft version live and shows tokens/cost/latency.
+- **AI Integrations** — create/edit integrations with a **searchable model picker from the live OpenRouter catalog**, **generation params that auto-populate per model**, a **model-aware prompt-caching** control, an **interactive prompt editor** (click a declared variable to insert `{{name}}`), a **Versions** action that loads any past version back into the form, and a **Test** panel that runs it live and shows tokens/cost/latency.
 - **Draft with AI** — describe the use case in plain language; the prompt builder fills the template and variable schema for you.
-- **General settings** — toggle the HTTP API, toggle the prompt builder, and pick the helper model.
+- **Invocations** — a read-only telemetry browser: filter by status / caller / integration / date, with cost + token Σ summaries and a per-call detail modal (usage, error, OpenRouter generation link).
+- **General settings** — toggle the HTTP API, toggle the prompt builder, and pick the helper model (also a catalog-backed Select).
 - **API Tokens** — mint and revoke scoped invocation tokens.
+
+### Screenshots
+
+| | |
+|---|---|
+| **Integration form** — catalog model picker, per-model params, caching, prompt editor | ![Create integration](screenshots/integration-create.png) |
+| **Integrations list** | ![Integrations](screenshots/integrations-list.png) |
+| **Invocations** — telemetry with Σ summaries | ![Invocations](screenshots/invocations.png) |
+| **Versions** — load a past version into the form | ![Versions](screenshots/modal-versions.png) |
+| **General settings** | ![General settings](screenshots/general-settings.png) |
+| **API tokens** | ![API tokens](screenshots/api-tokens.png) |
 
 ## Rate & cost limiting
 
