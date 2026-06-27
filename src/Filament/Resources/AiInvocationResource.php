@@ -99,9 +99,13 @@ class AiInvocationResource extends Resource
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('cost_usd')
                     ->label('Cost')
-                    ->money('usd', divideBy: 1)
+                    // Per-call costs are routinely sub-cent, so money('usd') (2 dp)
+                    // would round them to $0.00. Show up to 6 dp instead.
+                    ->formatStateUsing(fn ($state): string => $state === null ? '—' : '$'.rtrim(rtrim(number_format((float) $state, 6), '0'), '.'))
                     ->sortable()
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Σ cost')->money('usd')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()
+                        ->label('Σ cost')
+                        ->formatStateUsing(fn ($state): string => '$'.number_format((float) $state, 6))),
                 Tables\Columns\TextColumn::make('latency_ms')
                     ->label('Latency')
                     ->numeric()
@@ -162,7 +166,9 @@ class AiInvocationResource extends Resource
                     Infolists\Components\TextEntry::make('prompt_tokens')->numeric()->placeholder('—'),
                     Infolists\Components\TextEntry::make('completion_tokens')->numeric()->placeholder('—'),
                     Infolists\Components\TextEntry::make('cached_tokens')->numeric()->placeholder('—'),
-                    Infolists\Components\TextEntry::make('cost_usd')->money('usd', divideBy: 1)->placeholder('—'),
+                    Infolists\Components\TextEntry::make('cost_usd')
+                        ->formatStateUsing(fn ($state): string => $state === null ? '—' : '$'.rtrim(rtrim(number_format((float) $state, 6), '0'), '.'))
+                        ->placeholder('—'),
                     Infolists\Components\TextEntry::make('latency_ms')->suffix(' ms')->placeholder('—'),
                     Infolists\Components\TextEntry::make('citation_count')->label('Citations')->placeholder('—'),
                     Infolists\Components\TextEntry::make('openrouter_generation_id')
