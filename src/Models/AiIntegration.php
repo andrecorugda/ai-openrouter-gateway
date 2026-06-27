@@ -33,6 +33,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $visibility
  * @property ?int $rate_limit_per_minute
  * @property ?float $max_daily_cost_usd
+ * @property bool $is_conversational
+ * @property ?int $conversation_ttl_minutes
  * @property ?AiIntegrationVersion $activeVersion
  */
 class AiIntegration extends Model
@@ -53,6 +55,8 @@ class AiIntegration extends Model
         'supports_tools',
         'rate_limit_per_minute',
         'max_daily_cost_usd',
+        'is_conversational',
+        'conversation_ttl_minutes',
         'created_by',
         'updated_by',
     ];
@@ -63,6 +67,8 @@ class AiIntegration extends Model
         'supports_tools' => 'boolean',
         'rate_limit_per_minute' => 'integer',
         'max_daily_cost_usd' => 'float',
+        'is_conversational' => 'boolean',
+        'conversation_ttl_minutes' => 'integer',
     ];
 
     public function getConnectionName(): ?string
@@ -102,6 +108,11 @@ class AiIntegration extends Model
     public function invocations(): HasMany
     {
         return $this->hasMany(AiInvocation::class, 'ai_integration_id');
+    }
+
+    public function conversations(): HasMany
+    {
+        return $this->hasMany(AiConversation::class, 'ai_integration_id');
     }
 
     // --- scopes --------------------------------------------------------------

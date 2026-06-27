@@ -6,6 +6,7 @@ namespace Andre\AiGateway\Services;
 
 use Andre\AiGateway\Exceptions\InvalidPromptArgsException;
 use Andre\AiGateway\Exceptions\OpenRouterRequestException;
+use Andre\AiGateway\Models\AiConversation;
 use Andre\AiGateway\Models\AiIntegration;
 use Andre\AiGateway\Models\AiIntegrationVersion;
 use Andre\AiGateway\Models\AiInvocation;
@@ -30,7 +31,95 @@ class AiGateway
         private readonly AiIntegrationResolver $resolver,
         private readonly PromptRenderer $promptRenderer,
         private readonly UsageGuard $guard,
+        // Optional + lazily resolved so existing 4-arg construction stays valid.
+        private readonly ?ConversationStore $conversationStore = null,
     ) {}
+
+    private function store(): ConversationStore
+    {
+        return $this->conversationStore ?? app(ConversationStore::class);
+    }
+
+    /**
+     * Stateful, multi-turn entry point. Loads (by uuid) or starts a thread,
+     * renders the system prompt FRESH from the active version, composes
+     * system + stored history + the new user message, dispatches, then persists
+     * the user + assistant turns. Returns an AiResult carrying the thread uuid.
+     *
+     * A null $conversationId starts a new thread. A supplied id is validated
+     * strictly — wrong integration/caller, closed, or expired all report a
+     * uniform "Conversation not found" so a guessed id leaks nothing.
+     *
+     * @param  array<string,mixed>  $args
+     * @param  array<string,mixed>  $opts
+     *
+     * @throws \RuntimeException When the integration or conversation is unavailable.
+     * @throws InvalidPromptArgsException
+     */
+    public function converse(
+        string $slug,
+        ?string $conversationId,
+        string $userMessage,
+        array $args = [],
+        array $opts = [],
+    ): AiResult {
+        $integration = $this->requireIntegration($slug);
+        $version = $integration->activeVersion;
+
+        $callerType = (string) ($opts['_caller_type'] ?? 'internal');
+        $callerId = is_scalar($opts['_caller_id'] ?? null) ? (string) $opts['_caller_id'] : null;
+
+        $store = $this->store();
+
+        if ($conversationId === null) {
+            $conversation = $store->start($integration, $callerType, $callerId, $integration->conversation_ttl_minutes);
+        } else {
+            /** @var class-string<AiConversation> $model */
+            $model = config('ai-gateway.models.conversation', AiConversation::class);
+            $conversation = $model::query()->where('uuid', $conversationId)->first();
+
+            if ($conversation === null
+                || $conversation->ai_integration_id !== $integration->id
+                || $conversation->caller_type !== $callerType
+                || $conversation->caller_id !== $callerId
+                || $conversation->status === AiConversation::STATUS_CLOSED
+                || $conversation->isExpired()
+            ) {
+                throw new \RuntimeException('Conversation not found');
+            }
+        }
+
+        $content = $this->renderForVersion($integration, $version, $args, $opts);
+
+        $messages = array_merge(
+            [['role' => 'system', 'content' => $content]],
+            $store->history($conversation),
+            [['role' => 'user', 'content' => $userMessage]],
+        );
+
+        $result = $this->dispatch($integration, $messages, $opts, skipPrompt: true);
+
+        $store->append($conversation, 'user', $userMessage, null);
+        $store->append($conversation, 'assistant', $result->text, $result->invocation_id);
+
+        return $result->withConversation($conversation->uuid);
+    }
+
+    /**
+     * Open a new conversation thread without sending a turn (the `/start` call).
+     *
+     * @param  array<string,mixed>  $opts  May carry _caller_type / _caller_id.
+     *
+     * @throws \RuntimeException When the integration is missing/inactive.
+     */
+    public function startConversation(string $slug, array $opts = []): AiConversation
+    {
+        $integration = $this->requireIntegration($slug);
+        $callerType = (string) ($opts['_caller_type'] ?? 'internal');
+        $callerId = is_scalar($opts['_caller_id'] ?? null) ? (string) $opts['_caller_id'] : null;
+
+        return $this->store()->start($integration, $callerType, $callerId, $integration->conversation_ttl_minutes);
+    }
 
     /**
      * Render the integration's prompt template against $args and dispatch.

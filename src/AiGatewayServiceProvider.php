@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway;
 
+use Andre\AiGateway\Console\PruneConversationsCommand;
 use Andre\AiGateway\Services\AiGateway;
 use Andre\AiGateway\Services\AiIntegrationResolver;
 use Andre\AiGateway\Services\AiIntegrationService;
+use Andre\AiGateway\Services\ConversationStore;
 use Andre\AiGateway\Services\OpenRouterClient;
 use Andre\AiGateway\Services\OpenRouterModelCatalog;
 use Andre\AiGateway\Services\PromptBuilderService;
@@ -31,7 +33,11 @@ class AiGatewayServiceProvider extends PackageServiceProvider
                 'create_ai_integration_versions_table',
                 'create_ai_invocations_table',
                 'create_ai_gateway_settings_table',
-            ]);
+                'create_ai_conversations_table',
+                'create_ai_conversation_messages_table',
+                'add_conversation_flags_to_ai_integrations_table',
+            ])
+            ->hasCommand(PruneConversationsCommand::class);
     }
 
     public function packageRegistered(): void
@@ -41,6 +47,7 @@ class AiGatewayServiceProvider extends PackageServiceProvider
         $this->app->singleton(PromptRenderer::class);
         $this->app->singleton(AiIntegrationResolver::class);
         $this->app->singleton(OpenRouterModelCatalog::class);
+        $this->app->singleton(ConversationStore::class);
         $this->app->singleton(UsageGuard::class);
         $this->app->singleton(AiIntegrationService::class);
         $this->app->singleton(PromptBuilderService::class);

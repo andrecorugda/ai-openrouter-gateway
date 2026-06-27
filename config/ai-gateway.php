@@ -1,6 +1,8 @@
 <?php
 
 declare(strict_types=1);
+use Andre\AiGateway\Models\AiConversation;
+use Andre\AiGateway\Models\AiConversationMessage;
 use Andre\AiGateway\Models\AiIntegration;
 use Andre\AiGateway\Models\AiIntegrationVersion;
 use Andre\AiGateway\Models\AiInvocation;
@@ -57,6 +59,8 @@ return [
             'integration_versions' => 'ai_integration_versions',
             'invocations' => 'ai_invocations',
             'settings' => 'ai_gateway_settings',
+            'conversations' => 'ai_conversations',
+            'conversation_messages' => 'ai_conversation_messages',
         ],
     ],
 
@@ -73,6 +77,25 @@ return [
         'integration' => AiIntegration::class,
         'integration_version' => AiIntegrationVersion::class,
         'invocation' => AiInvocation::class,
+        'conversation' => AiConversation::class,
+        'conversation_message' => AiConversationMessage::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conversations (multi-turn threads)
+    |--------------------------------------------------------------------------
+    |
+    | Stateful threads for integrations flagged `is_conversational`. A client
+    | mints a thread via POST {prefix}/{integration}/start and continues it via
+    | POST {prefix}/{integration}/converse. Idle threads expire after the
+    | integration's `conversation_ttl_minutes` (or this default) and are
+    | soft-deleted by `php artisan ai-gateway:prune-conversations`.
+    |
+    */
+
+    'conversations' => [
+        'default_ttl_minutes' => (int) env('AI_GATEWAY_CONVERSATION_TTL_MINUTES', 2880), // 48h
     ],
 
     /*

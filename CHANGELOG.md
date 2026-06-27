@@ -5,6 +5,16 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-06-27
+
+### Added
+- **Conversation threads** — opt-in multi-turn memory for integrations flagged `is_conversational`:
+  - `AiGateway::converse($slug, $conversationId, $message, $args, $opts)` and `startConversation()`; stateless `invoke/chat/complete` unchanged.
+  - HTTP: `POST {prefix}/{integration}/start` (mints a thread) + `POST {prefix}/{integration}/converse` (continues it).
+  - `ai_conversations` + `ai_conversation_messages` tables (each turn links to its `ai_invocations` row); `is_conversational` + `conversation_ttl_minutes` on integrations.
+  - `ConversationStore` service, per-caller ownership scoping, TTL expiry, and the `ai-gateway:prune-conversations` command.
+  - Filament: Conversational toggle + TTL on the integration form.
+
 ## [1.0.0] - 2026-06-27
 
 First stable release. `composer require andrecorugda/ai-openrouter-gateway` now resolves to `^1.0`, so `composer update` tracks the latest stable 1.x.

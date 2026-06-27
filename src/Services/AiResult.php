@@ -30,14 +30,38 @@ readonly class AiResult
         public array $attempts,
         public ?string $generation_id,
         public ?int $invocation_id = null,
+        public ?string $conversation_id = null,
     ) {}
+
+    /**
+     * Return a copy with the conversation uuid set. dispatch() builds the
+     * AiResult without knowing the thread, so converse() clones here.
+     */
+    public function withConversation(string $uuid): self
+    {
+        return new self(
+            text: $this->text,
+            messages: $this->messages,
+            citations: $this->citations,
+            usage: $this->usage,
+            model_used: $this->model_used,
+            provider_used: $this->provider_used,
+            finish_reason: $this->finish_reason,
+            cost_usd: $this->cost_usd,
+            latency_ms: $this->latency_ms,
+            attempts: $this->attempts,
+            generation_id: $this->generation_id,
+            invocation_id: $this->invocation_id,
+            conversation_id: $uuid,
+        );
+    }
 
     /**
      * @return array<string,mixed>
      */
     public function toArray(): array
     {
-        return [
+        $out = [
             'text' => $this->text,
             'messages' => $this->messages,
             'citations' => $this->citations,
@@ -51,5 +75,11 @@ readonly class AiResult
             'generation_id' => $this->generation_id,
             'invocation_id' => $this->invocation_id,
         ];
+
+        if ($this->conversation_id !== null) {
+            $out['conversation_id'] = $this->conversation_id;
+        }
+
+        return $out;
     }
 }

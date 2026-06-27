@@ -292,6 +292,17 @@ class AiIntegrationResource extends Resource
                             ->default(true),
                         Forms\Components\Toggle::make('supports_vision'),
                         Forms\Components\Toggle::make('supports_tools'),
+                        Forms\Components\Toggle::make('is_conversational')
+                            ->label('Conversational')
+                            ->helperText('Enables the /start + /converse thread API.')
+                            ->live(),
+                        Forms\Components\TextInput::make('conversation_ttl_minutes')
+                            ->label('Thread TTL (minutes)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->placeholder((string) config('ai-gateway.conversations.default_ttl_minutes', 2880))
+                            ->helperText('Idle threads expire after this. Blank = config default.')
+                            ->visible(fn (Get $get): bool => (bool) $get('is_conversational')),
                     ])
                     ->columns(1)
                     ->columnSpan(1),
@@ -665,6 +676,7 @@ class AiIntegrationResource extends Resource
         'slug', 'name', 'description', 'provider', 'visibility',
         'is_active', 'supports_vision', 'supports_tools',
         'rate_limit_per_minute', 'max_daily_cost_usd',
+        'is_conversational', 'conversation_ttl_minutes',
     ];
 
     /** Version-only keys that must NOT be passed to the model's save/update. */

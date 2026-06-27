@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Andre\AiGateway\Http\Controllers\ConverseController;
 use Andre\AiGateway\Http\Controllers\InvokeAiIntegrationController;
+use Andre\AiGateway\Http\Controllers\StartConversationController;
 use Andre\AiGateway\Http\Middleware\EnsureApiEnabled;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
@@ -34,4 +36,10 @@ Route::middleware(array_merge(
 ))->prefix((string) config('ai-gateway.api.prefix', 'api/ai'))->group(function () {
     Route::post('{integration}/chat', InvokeAiIntegrationController::class)
         ->name('ai-gateway.invoke');
+
+    // Multi-turn conversation threads (integrations flagged is_conversational).
+    Route::post('{integration}/start', StartConversationController::class)
+        ->name('ai-gateway.conversation.start');
+    Route::post('{integration}/converse', ConverseController::class)
+        ->name('ai-gateway.conversation.converse');
 });

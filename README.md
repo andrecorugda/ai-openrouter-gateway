@@ -37,6 +37,7 @@ In short: prompts and models become **configuration**, not code — owned by the
 - 🚦 **Rate limiting** — per-integration, per-caller, per-minute.
 - 💰 **Cost limiting** — per-integration daily USD budget, enforced before each call.
 - 🌐 **HTTP API** — `POST /api/ai/{integration}/chat`, Sanctum-authenticated, toggleable at runtime.
+- 💬 **Conversation threads** — opt-in multi-turn memory with `/start` + `/converse`, per-caller ownership, TTL expiry, and a prune command.
 - 🔑 **API token management** — mint and revoke scoped tokens from the admin UI.
 - 🔎 **OpenRouter server tools** — per-version `web_search` / `web_fetch`.
 - ✨ **AI prompt builder** — describe what you want; a fast Haiku drafts the template + variables.
@@ -201,6 +202,41 @@ You get:
 | **Versions** — load a past version into the form | ![Versions](screenshots/modal-versions.png) |
 | **General settings** | ![General settings](screenshots/general-settings.png) |
 | **API tokens** | ![API tokens](screenshots/api-tokens.png) |
+
+## Conversations (multi-turn threads)
+
+Flag an integration **conversational** (UI toggle, or `is_conversational` + `conversation_ttl_minutes`) to get server-side memory: the gateway persists each turn, so clients send only the next message — no replaying history.
+
+From PHP:
+
+```php
+use Andre\AiGateway\Facades\AiGateway;
+
+$first  = AiGateway::converse('support', null, 'My order is late');      // null → new thread
+$id     = $first->conversation_id;                                       // keep this
+$second = AiGateway::converse('support', $id, 'Order #4471');            // continues with full history
+```
+
+Over HTTP (two calls, à la a chatbot `/start` then `/chat`):
+
+```bash
+# 1) open a thread
+curl -X POST https://your-app.test/api/ai/support/start \
+  -H "Authorization: Bearer <token>"
+# → { "data": { "conversation_id": "0779…", "expires_at": "…" } }
+
+# 2) send turns
+curl -X POST https://your-app.test/api/ai/support/converse \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"conversation_id": "0779…", "message": "Order #4471"}'
+```
+
+Threads are owned by their caller (a guessed id returns 404), expire after the TTL, and link each turn to its telemetry row. Prune expired threads on a schedule:
+
+```php
+// routes/console.php
+Schedule::command('ai-gateway:prune-conversations')->daily();
+```
 
 ## Rate & cost limiting
 
