@@ -5,6 +5,11 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-06-27
+
+### Added
+- **Invocations browser** — read-only Filament resource over `ai_invocations`: columns for integration, status, model, caller, tokens, cost, latency; filters by status / caller / integration / date range; cost + token **Σ summaries**; a per-row **detail modal** (usage, cost, error, OpenRouter generation link); 30s live poll.
+
 ## [0.3.1] - 2026-06-27
 
 ### Changed

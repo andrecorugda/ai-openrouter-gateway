@@ -7,6 +7,7 @@ namespace Andre\AiGateway\Filament;
 use Andre\AiGateway\Filament\Pages\ApiTokens;
 use Andre\AiGateway\Filament\Pages\GeneralSettings;
 use Andre\AiGateway\Filament\Resources\AiIntegrationResource;
+use Andre\AiGateway\Filament\Resources\AiInvocationResource;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 
@@ -39,6 +40,7 @@ class AiGatewayPlugin implements Plugin
         $panel
             ->resources([
                 AiIntegrationResource::class,
+                AiInvocationResource::class,
             ])
             ->pages([
                 GeneralSettings::class,
