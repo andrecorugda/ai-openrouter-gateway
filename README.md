@@ -30,9 +30,9 @@ Each AI use case is a **named integration** with a versioned prompt template, a 
 ## Requirements
 
 - PHP 8.2+
-- Laravel 11 or 12
+- Laravel 11, 12, or 13
 - An [OpenRouter](https://openrouter.ai) API key
-- Filament 3.2+ *(optional — only for the admin UI)*
+- Filament 3.2+ *(optional — only for the admin UI; use a Filament release that supports your Laravel version)*
 
 ## Installation
 
