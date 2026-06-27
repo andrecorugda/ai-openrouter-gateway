@@ -319,7 +319,12 @@ class AiIntegrationResource extends Resource
                     ->columnSpan(1),
 
             ]),
-        ]);
+        ])
+            // Single-column root so the top-level rows stack; the explicit
+            // Grid::make(2)/Grid::make(3) above lay out the side-by-side
+            // sections. (Filament v4/v5 no longer makes sections span full
+            // width by default, which otherwise jumbles the layout.)
+            ->columns(1);
     }
 
     public static function table(Table $table): Table

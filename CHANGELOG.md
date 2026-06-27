@@ -5,6 +5,13 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-06-27
+
+### Fixed (Filament 4/5)
+- API Tokens: notification action used the removed `Filament\Notifications\Actions\Action`; now the unified `Filament\Actions\Action`. The copy button is a client-side link (`url('#')` + `preventDefault`) so v5 doesn't try a server-side `mountAction` (which 500'd).
+- Integration form layout: set the root schema to a single column so the Identity|Models and Server-tools|Limits|Visibility grids lay out correctly (v4/v5 layout sections no longer span full width by default).
+- API docs page: iframe now sizes via inline styles (width/height) instead of Tailwind utility classes that aren't in the host app's CSS build, so it fills the page.
+
 ## [2.0.0] - 2026-06-27
 
 ### Changed

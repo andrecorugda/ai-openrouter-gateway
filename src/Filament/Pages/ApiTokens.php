@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament\Pages;
 
+use Filament\Actions\Action as NotificationAction;
 use Filament\Actions\Action as TableAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Columns\TextColumn;
@@ -188,14 +188,18 @@ class ApiTokens extends Page implements HasTable
                     ->label('Copy to clipboard')
                     ->icon('heroicon-m-clipboard-document')
                     ->button()
-                    // The token is stashed in a data-* attribute and the handler
-                    // reads it — the x-on:click expression deliberately contains
-                    // NO HTML-special chars (no quotes, =>, &, <, >), which would
-                    // be entity-escaped in the attribute and break Alpine's parser.
-                    // Requires a secure context (https or localhost) for clipboard.
+                    // Render as a link (url) so Filament does NOT wire it to a
+                    // server-side mountAction — the notifications Livewire
+                    // component has no such method. The copy is purely
+                    // client-side: the token is stashed in a data-* attribute and
+                    // the handler reads it (the expression deliberately contains
+                    // no HTML-special chars that would be entity-escaped and break
+                    // Alpine). preventDefault stops the link navigating. Requires
+                    // a secure context (https or localhost) for the clipboard API.
+                    ->url('#')
                     ->extraAttributes([
                         'data-token' => $plain,
-                        'x-on:click' => 'navigator.clipboard?.writeText($el.dataset.token)',
+                        'x-on:click' => 'event.preventDefault(); navigator.clipboard?.writeText($el.dataset.token)',
                     ]),
             ])
             ->send();
