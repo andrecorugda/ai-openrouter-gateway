@@ -18,8 +18,18 @@ class EditAiIntegration extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            // Reuse the resource's Test action from the edit header.
-            AiIntegrationResource::testAction(),
+            // A page-header (Filament\Actions\Action) Test action that reuses the
+            // resource's shared form schema + run logic. The table uses the
+            // Tables\Actions\Action variant; page headers require this class.
+            Actions\Action::make('test')
+                ->label('Test')
+                ->icon('heroicon-m-play')
+                ->color('gray')
+                ->disabled(fn (): bool => $this->getRecord()->activeVersion === null)
+                ->modalHeading(fn (): string => 'Test "'.$this->getRecord()->name.'"')
+                ->modalSubmitActionLabel('Run')
+                ->form(fn (): array => AiIntegrationResource::testFormSchema($this->getRecord()))
+                ->action(fn (array $data) => AiIntegrationResource::runTest($this->getRecord(), $data)),
             Actions\DeleteAction::make(),
         ];
     }

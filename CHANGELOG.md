@@ -5,6 +5,12 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-06-27
+
+### Fixed
+- **Filament integration form**: the `slug` field called non-existent `TextInput::alphaDash()`/`lowercase()` (500 on create/edit). Replaced with a `regex` rule; aligned `maxLength` to the `varchar(64)` column.
+- **Filament Edit page**: header reused a `Tables\Actions\Action` where a `Filament\Actions\Action` is required. Added a proper page-header Test action and extracted the shared `runTest()` helper used by both the table and the header.
+
 ## [0.1.3] - 2026-06-27
 
 ### Fixed

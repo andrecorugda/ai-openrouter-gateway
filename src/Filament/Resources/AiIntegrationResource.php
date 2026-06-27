@@ -78,9 +78,8 @@ class AiIntegrationResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('slug')
                         ->required()
-                        ->alphaDash()
-                        ->lowercase()
-                        ->maxLength(120)
+                        ->regex('/^[a-z][a-z0-9_-]*$/')
+                        ->maxLength(64)
                         ->helperText('Lowercase, dashes/underscores only. Used as the invocation key, e.g. "lead-summary".')
                         // Immutable once created: shown read-only and excluded from the update payload.
                         ->disabled(fn (?object $record): bool => $record !== null)
@@ -378,66 +377,77 @@ class AiIntegrationResource extends Resource
             ->modalHeading(fn (object $record): string => 'Test "'.$record->name.'"')
             ->modalSubmitActionLabel('Run')
             ->form(fn (object $record): array => static::testFormSchema($record))
-            ->action(function (object $record, array $data): void {
-                $version = $record->activeVersion;
-                if ($version === null) {
-                    Notification::make()->danger()->title('No active version to test')->send();
+            ->action(fn (object $record, array $data): mixed => static::runTest($record, $data));
+    }
 
-                    return;
-                }
+    /**
+     * Shared "run a test invocation" logic for both the table row action and
+     * the edit-page header action. Splits the collected modal fields into
+     * prompt args + an optional extra message, calls the gateway against the
+     * record's active version, and reports the result via a notification.
+     *
+     * @param  array<string,mixed>  $data
+     */
+    public static function runTest(object $record, array $data): void
+    {
+        $version = $record->activeVersion;
+        if ($version === null) {
+            Notification::make()->danger()->title('No active version to test')->send();
 
-                // Split the collected fields: prompt args (arg_*) vs. extra message.
-                $args = [];
-                foreach (($version->prompt_args ?? []) as $arg) {
-                    $name = $arg['name'] ?? null;
-                    if (! is_string($name)) {
-                        continue;
-                    }
-                    $key = 'arg_'.$name;
-                    if (array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '') {
-                        $args[$name] = static::castArgForTest($data[$key], (string) ($arg['type'] ?? 'string'));
-                    }
-                }
+            return;
+        }
 
-                $messages = [];
-                if (! empty($data['extra_message'])) {
-                    $messages[] = ['role' => 'user', 'content' => $data['extra_message']];
-                }
+        // Split the collected fields: prompt args (arg_*) vs. extra message.
+        $args = [];
+        foreach (($version->prompt_args ?? []) as $arg) {
+            $name = $arg['name'] ?? null;
+            if (! is_string($name)) {
+                continue;
+            }
+            $key = 'arg_'.$name;
+            if (array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '') {
+                $args[$name] = static::castArgForTest($data[$key], (string) ($arg['type'] ?? 'string'));
+            }
+        }
 
-                try {
-                    $result = app(AiGateway::class)->invokeVersion($record, $version, $args, $messages, [
-                        '_caller_type' => 'admin-test',
-                        '_caller_id' => (string) (auth()->id() ?? 'console'),
-                    ]);
-                } catch (Throwable $e) {
-                    Notification::make()
-                        ->danger()
-                        ->title('Test invocation failed')
-                        ->body($e->getMessage())
-                        ->persistent()
-                        ->send();
+        $messages = [];
+        if (! empty($data['extra_message'])) {
+            $messages[] = ['role' => 'user', 'content' => $data['extra_message']];
+        }
 
-                    return;
-                }
+        try {
+            $result = app(AiGateway::class)->invokeVersion($record, $version, $args, $messages, [
+                '_caller_type' => 'admin-test',
+                '_caller_id' => (string) (auth()->id() ?? 'console'),
+            ]);
+        } catch (Throwable $e) {
+            Notification::make()
+                ->danger()
+                ->title('Test invocation failed')
+                ->body($e->getMessage())
+                ->persistent()
+                ->send();
 
-                $usage = $result->usage;
-                $body = sprintf(
-                    "%s\n\nmodel: %s | tokens: %s→%s | cost: $%s | %s ms",
-                    mb_strimwidth($result->text, 0, 600, '…'),
-                    $result->model_used,
-                    $usage['prompt_tokens'] ?? '?',
-                    $usage['completion_tokens'] ?? '?',
-                    $result->cost_usd !== null ? number_format($result->cost_usd, 6) : '?',
-                    $result->latency_ms ?? '?',
-                );
+            return;
+        }
 
-                Notification::make()
-                    ->success()
-                    ->title('Test succeeded')
-                    ->body($body)
-                    ->persistent()
-                    ->send();
-            });
+        $usage = $result->usage;
+        $body = sprintf(
+            "%s\n\nmodel: %s | tokens: %s→%s | cost: $%s | %s ms",
+            mb_strimwidth($result->text, 0, 600, '…'),
+            $result->model_used,
+            $usage['prompt_tokens'] ?? '?',
+            $usage['completion_tokens'] ?? '?',
+            $result->cost_usd !== null ? number_format($result->cost_usd, 6) : '?',
+            $result->latency_ms ?? '?',
+        );
+
+        Notification::make()
+            ->success()
+            ->title('Test succeeded')
+            ->body($body)
+            ->persistent()
+            ->send();
     }
 
     /**
