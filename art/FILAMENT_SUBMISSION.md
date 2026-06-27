@@ -15,7 +15,8 @@ Everything below is paste-ready.
 
 **Compatible Filament versions:** 3.x
 
-**Thumbnail / cover image:** `art/cover.png` (1600×900)
+**Cover image:** `art/cover.jpg` (2560×1440, 16:9, JPEG, light theme)
+**Thumbnail:** `art/thumbnail.jpg` (1920×1080, 16:9, JPEG, light theme)
 
 **Dark mode:** Yes (uses Filament's native theming)
 **Multilingual:** No (single-language UI for now)
