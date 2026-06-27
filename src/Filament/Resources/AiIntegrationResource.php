@@ -193,6 +193,13 @@ class AiIntegrationResource extends Resource
                 ->description('Default OpenRouter params. max_tokens and temperature live here.')
                 ->schema([
                     Forms\Components\KeyValue::make('default_params')
+                        // Seed from the pre-selected default model on create, so the
+                        // params aren't empty until the model is toggled (the
+                        // afterStateUpdated seeder only fires on a change).
+                        ->default(fn (): array => array_map(
+                            static fn ($v): string => (string) $v,
+                            app(OpenRouterModelCatalog::class)->defaultParametersFor((string) config('ai-gateway.default_model', '')),
+                        ))
                         ->keyLabel('param')
                         ->valueLabel('value')
                         ->reorderable()
