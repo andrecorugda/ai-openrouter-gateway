@@ -9,8 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed (Filament 4/5)
 - API Tokens: notification action used the removed `Filament\Notifications\Actions\Action`; now the unified `Filament\Actions\Action`. The copy button is a client-side link (`url('#')` + `preventDefault`) so v5 doesn't try a server-side `mountAction` (which 500'd).
+- **Copy to clipboard now actually copies.** Filament 4/5 strips event-handler attributes (`x-on:click` / `@click`) from action `extraAttributes` (it keeps `data-*`), and Livewire never executes `<script>` tags rendered inside a component view — so the previous inline handler silently no-opped. The token now rides in a `data-ai-gateway-copy` attribute and a delegated listener, injected into the panel layout via a `panels::body.end` render hook, performs the copy (with an execCommand fallback and a "Copied!" confirmation).
+- **Prompt composer layout.** The editor + variables side panel used Tailwind utility classes (`flex`, `sm:flex-row`, `sm:w-56`, `bg-primary-*`…) that aren't in the host app's Filament 4/5 CSS build, so the panel stacked below the textarea and lost styling. Rewritten with inline styles so the layout holds regardless of the host's CSS.
+- **Invocation detail modal.** Forced the root infolist to a single column so the Call and Usage & cost sections span the full modal width instead of being squeezed side-by-side with wrapping entries (v4/v5 default the root schema to 2 columns).
 - Integration form layout: set the root schema to a single column so the Identity|Models and Server-tools|Limits|Visibility grids lay out correctly (v4/v5 layout sections no longer span full width by default).
 - API docs page: iframe now sizes via inline styles (width/height) instead of Tailwind utility classes that aren't in the host app's CSS build, so it fills the page.
+
+### Docs
+- Refreshed all bundled UI screenshots in **dark theme** (captured live on a Filament 5 app), and added Invocation-detail and one-time-token (copy) shots to the README.
 
 ## [2.0.0] - 2026-06-27
 

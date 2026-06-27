@@ -240,12 +240,13 @@ You get:
 
 | | |
 |---|---|
-| **Integration form** — catalog model picker, per-model params, caching, prompt editor | ![Create integration](screenshots/integration-create.png) |
+| **Integration form** — catalog model picker, per-model params, caching, prompt editor | ![Create integration](screenshots/integration-edit.png) |
 | **Integrations list** | ![Integrations](screenshots/integrations-list.png) |
 | **Invocations** — telemetry with Σ summaries | ![Invocations](screenshots/invocations.png) |
+| **Invocation detail** — per-call tokens, cost, latency, OpenRouter id | ![Invocation detail](screenshots/invocation-detail.png) |
 | **Versions** — load a past version into the form | ![Versions](screenshots/modal-versions.png) |
 | **General settings** | ![General settings](screenshots/general-settings.png) |
-| **API tokens** | ![API tokens](screenshots/api-tokens.png) |
+| **API tokens** — mint scoped tokens; one-time value with one-click copy | ![API tokens](screenshots/api-tokens-created.png) |
 
 ## Conversations (multi-turn threads)
 

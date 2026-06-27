@@ -14,6 +14,7 @@ use Andre\AiGateway\Services\OpenRouterModelCatalog;
 use Andre\AiGateway\Services\PromptBuilderService;
 use Andre\AiGateway\Services\PromptRenderer;
 use Andre\AiGateway\Services\UsageGuard;
+use Filament\Support\Facades\FilamentView;
 use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -57,6 +58,27 @@ class AiGatewayServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         $this->registerApiRoutes();
+        $this->registerFilamentAssets();
+    }
+
+    /**
+     * Inject the clipboard-copy listener into every Filament panel page.
+     *
+     * It must live in the panel layout (a render hook) rather than a page view:
+     * Livewire does not execute <script> tags rendered inside a component's
+     * template, so a script in the ApiTokens page would never bind. The hook
+     * name is a string so it resolves across Filament 3/4/5.
+     */
+    private function registerFilamentAssets(): void
+    {
+        if (! class_exists(FilamentView::class)) {
+            return;
+        }
+
+        FilamentView::registerRenderHook(
+            'panels::body.end',
+            static fn (): string => view('ai-gateway::filament.copy-script')->render(),
+        );
     }
 
     private function registerApiRoutes(): void

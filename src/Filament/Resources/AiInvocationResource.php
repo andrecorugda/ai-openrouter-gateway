@@ -148,7 +148,10 @@ class AiInvocationResource extends Resource
 
     public static function infolist(Schema $schema): Schema
     {
-        return $schema->components([
+        // Force a single top-level column so each Section spans the full modal
+        // width (Filament 4/5 default the root schema to 2 columns, which would
+        // squeeze the two sections side-by-side and wrap their 3-column entries).
+        return $schema->columns(1)->components([
             Schemas\Components\Section::make('Call')
                 ->columns(3)
                 ->schema([

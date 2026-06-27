@@ -191,15 +191,14 @@ class ApiTokens extends Page implements HasTable
                     // Render as a link (url) so Filament does NOT wire it to a
                     // server-side mountAction — the notifications Livewire
                     // component has no such method. The copy is purely
-                    // client-side: the token is stashed in a data-* attribute and
-                    // the handler reads it (the expression deliberately contains
-                    // no HTML-special chars that would be entity-escaped and break
-                    // Alpine). preventDefault stops the link navigating. Requires
-                    // a secure context (https or localhost) for the clipboard API.
+                    // client-side. Filament 4/5 strips event-handler attributes
+                    // (x-on:click / @click) from action extraAttributes but keeps
+                    // data-*, so the token rides in data-ai-gateway-copy and the
+                    // delegated listener in the api-tokens page view performs the
+                    // copy. Requires a secure context (https or localhost).
                     ->url('#')
                     ->extraAttributes([
-                        'data-token' => $plain,
-                        'x-on:click' => 'event.preventDefault(); navigator.clipboard?.writeText($el.dataset.token)',
+                        'data-ai-gateway-copy' => $plain,
                     ]),
             ])
             ->send();
