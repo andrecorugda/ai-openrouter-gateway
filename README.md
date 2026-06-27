@@ -1,8 +1,8 @@
 # AI OpenRouter Gateway for Laravel
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/andre/ai-openrouter-gateway.svg?style=flat-square)](https://packagist.org/packages/andre/ai-openrouter-gateway)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/andrecorugda/ai-openrouter-gateway.svg?style=flat-square)](https://packagist.org/packages/andrecorugda/ai-openrouter-gateway)
 [![Tests](https://img.shields.io/github/actions/workflow/status/andrecorugda/ai-openrouter-gateway/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/andrecorugda/ai-openrouter-gateway/actions)
-[![License](https://img.shields.io/packagist/l/andre/ai-openrouter-gateway.svg?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/packagist/l/andrecorugda/ai-openrouter-gateway.svg?style=flat-square)](LICENSE)
 
 A self-hostable, **OpenRouter-backed AI gateway** for Laravel. One API key reaches every model — Anthropic Claude, OpenAI GPT, Google Gemini, DeepSeek, and more — behind **one service, one audit log, one cost view**.
 
@@ -37,7 +37,7 @@ Each AI use case is a **named integration** with a versioned prompt template, a 
 ## Installation
 
 ```bash
-composer require andre/ai-openrouter-gateway
+composer require andrecorugda/ai-openrouter-gateway
 ```
 
 Publish and run the migrations:

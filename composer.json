@@ -1,5 +1,5 @@
 {
-    "name": "andre/ai-openrouter-gateway",
+    "name": "andrecorugda/ai-openrouter-gateway",
     "description": "A self-hostable, OpenRouter-backed AI gateway for Laravel — named integrations, versioned prompts, telemetry, rate & cost limiting, a Sanctum HTTP API, and a Filament admin UI with an AI-assisted prompt builder.",
     "keywords": [
         "laravel",
