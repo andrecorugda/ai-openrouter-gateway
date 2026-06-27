@@ -43,14 +43,14 @@ composer require andrecorugda/ai-openrouter-gateway
 Publish and run the migrations:
 
 ```bash
-php artisan vendor:publish --tag="ai-gateway-migrations"
+php artisan vendor:publish --tag="ai-openrouter-gateway-migrations"
 php artisan migrate
 ```
 
 Optionally publish the config:
 
 ```bash
-php artisan vendor:publish --tag="ai-gateway-config"
+php artisan vendor:publish --tag="ai-openrouter-gateway-config"
 ```
 
 Add your key to `.env`:
