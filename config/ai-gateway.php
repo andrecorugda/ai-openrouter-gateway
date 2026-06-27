@@ -158,6 +158,9 @@ return [
             'enabled' => (bool) env('AI_GATEWAY_API_DOCS_ENABLED', true),
             'middleware' => [],
             'script_src' => env('AI_GATEWAY_API_DOCS_SCRIPT', 'https://cdn.jsdelivr.net/npm/@scalar/api-reference'),
+            // Render the Scalar docs in dark mode (also keeps the panel-embedded
+            // iframe consistent with Filament's dark theme). Set false for light.
+            'dark_mode' => (bool) env('AI_GATEWAY_API_DOCS_DARK', true),
         ],
     ],
 
