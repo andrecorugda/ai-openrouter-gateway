@@ -1,0 +1,666 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Andre\AiGateway\Filament\Resources;
+
+use Andre\AiGateway\Filament\Resources\AiIntegrationResource\Pages;
+use Andre\AiGateway\Models\AiIntegration;
+use Andre\AiGateway\Models\AiIntegrationVersion;
+use Andre\AiGateway\Services\AiGateway;
+use Andre\AiGateway\Services\AiIntegrationService;
+use Andre\AiGateway\Services\PromptBuilderService;
+use Andre\AiGateway\Services\PromptRenderer;
+use Filament\Forms;
+use Filament\Forms\Components\Component;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use Filament\Infolists\Components\Actions\Action;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
+use Throwable;
+
+/**
+ * Admin UI for the AI integration registry.
+ *
+ * Each row is a use case (slug + provider + guardrails). The *editable surface*
+ * — system prompt, models, params, prompt args, server tools — lives on the
+ * active {@see AiIntegrationVersion}; saving here mints + activates a new
+ * version via {@see AiIntegrationService::saveVersion()} so history is kept.
+ *
+ * The form intentionally surfaces version fields as plain form fields; the
+ * Create/Edit pages split registry vs. version columns at save time and merge
+ * the active version back in on load.
+ */
+class AiIntegrationResource extends Resource
+{
+    protected static ?string $navigationIcon = 'heroicon-o-sparkles';
+
+    public static function getModel(): string
+    {
+        /** @var class-string<Model> */
+        return config('ai-gateway.models.integration', AiIntegration::class);
+    }
+
+    public static function getModelLabel(): string
+    {
+        return 'AI integration';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return config('ai-gateway.filament.navigation_group', 'AI & Automation');
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return config('ai-gateway.filament.navigation_sort', 50);
+    }
+
+    /** The 6 prompt-arg types, as a select option map. */
+    public static function argTypeOptions(): array
+    {
+        return array_combine(PromptRenderer::VALID_TYPES, PromptRenderer::VALID_TYPES);
+    }
+
+    public static function form(Form $form): Form
+    {
+        return $form->schema([
+
+            // (a) Identity ----------------------------------------------------
+            Forms\Components\Section::make('Identity')
+                ->description('Stable registry fields. The slug is the call key and cannot change after creation.')
+                ->schema([
+                    Forms\Components\TextInput::make('slug')
+                        ->required()
+                        ->alphaDash()
+                        ->lowercase()
+                        ->maxLength(120)
+                        ->helperText('Lowercase, dashes/underscores only. Used as the invocation key, e.g. "lead-summary".')
+                        // Immutable once created: shown read-only and excluded from the update payload.
+                        ->disabled(fn (?object $record): bool => $record !== null)
+                        ->dehydrated(fn (?object $record): bool => $record === null),
+                    Forms\Components\TextInput::make('name')
+                        ->required()
+                        ->maxLength(160),
+                    Forms\Components\Textarea::make('description')
+                        ->rows(2)
+                        ->maxLength(1000)
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('provider')
+                        ->default('openrouter')
+                        ->required()
+                        ->maxLength(60)
+                        ->helperText('Routing provider label recorded on telemetry. Usually "openrouter".'),
+                ])
+                ->columns(2),
+
+            // (b) Models ------------------------------------------------------
+            Forms\Components\Section::make('Models')
+                ->description('OpenRouter model slugs. The first is primary; the rest are fallbacks in order.')
+                ->schema([
+                    Forms\Components\TagsInput::make('models')
+                        ->required()
+                        ->placeholder('anthropic/claude-sonnet-4')
+                        ->default([(string) config('ai-gateway.default_model', 'anthropic/claude-sonnet-4')])
+                        ->helperText('Primary model first. Press enter to add each slug.')
+                        ->columnSpanFull(),
+                ]),
+
+            // (c) Prompt ------------------------------------------------------
+            Forms\Components\Section::make('System prompt')
+                ->description('The template rendered before each call. Use {{snake_case}} placeholders for runtime variables.')
+                ->headerActions([
+                    static::draftWithAiAction(),
+                ])
+                ->schema([
+                    Forms\Components\Textarea::make('system_prompt')
+                        ->rows(10)
+                        ->columnSpanFull()
+                        ->helperText('Placeholders like {{company_name}} are filled from the Variables below.'),
+                    Forms\Components\Toggle::make('system_prompt_cacheable')
+                        ->default(true)
+                        ->helperText('Send the system prompt with a cache_control marker so providers can cache it.'),
+                ]),
+
+            // (d) Variables ---------------------------------------------------
+            Forms\Components\Section::make('Variables')
+                ->description('Declares the runtime inputs the prompt expects. Each must match a {{placeholder}}.')
+                ->schema([
+                    Forms\Components\Repeater::make('prompt_args')
+                        ->label('Prompt variables')
+                        ->schema([
+                            Forms\Components\TextInput::make('name')
+                                ->required()
+                                ->regex('/^[a-z][a-z0-9_]*$/')
+                                ->maxLength(32)
+                                ->helperText('snake_case, max 32 chars.'),
+                            Forms\Components\Select::make('type')
+                                ->options(static::argTypeOptions())
+                                ->default('string')
+                                ->required(),
+                            Forms\Components\Toggle::make('required')
+                                ->default(true)
+                                ->inline(false),
+                            Forms\Components\TextInput::make('description')
+                                ->maxLength(255),
+                        ])
+                        ->columns(4)
+                        ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                        ->addActionLabel('Add variable')
+                        ->collapsible()
+                        ->defaultItems(0)
+                        ->columnSpanFull(),
+                ]),
+
+            // (e) Generation params ------------------------------------------
+            Forms\Components\Section::make('Generation parameters')
+                ->description('Default OpenRouter params. max_tokens and temperature live here.')
+                ->schema([
+                    Forms\Components\KeyValue::make('default_params')
+                        ->keyLabel('param')
+                        ->valueLabel('value')
+                        ->reorderable()
+                        ->helperText('e.g. max_tokens = 1024, temperature = 0.7, top_p = 0.9')
+                        ->columnSpanFull(),
+                ]),
+
+            // (f) Server tools ------------------------------------------------
+            Forms\Components\Section::make('Server tools')
+                ->description('OpenRouter-hosted tools the model may call. Persisted into the server_tools shape.')
+                ->schema([
+                    Forms\Components\Fieldset::make('Web search')
+                        ->schema([
+                            Forms\Components\Toggle::make('server_tools_web_search_enabled')
+                                ->label('Enable web search'),
+                            Forms\Components\Select::make('server_tools_web_search_engine')
+                                ->label('Engine')
+                                ->options([
+                                    'auto' => 'auto',
+                                    'native' => 'native',
+                                    'exa' => 'exa',
+                                    'firecrawl' => 'firecrawl',
+                                    'parallel' => 'parallel',
+                                ])
+                                ->default('auto')
+                                ->visible(fn (Get $get): bool => (bool) $get('server_tools_web_search_enabled')),
+                            Forms\Components\TextInput::make('server_tools_web_search_max_results')
+                                ->label('Max results')
+                                ->numeric()
+                                ->minValue(1)
+                                ->visible(fn (Get $get): bool => (bool) $get('server_tools_web_search_enabled')),
+                        ])
+                        ->columns(3),
+                    Forms\Components\Fieldset::make('Web fetch')
+                        ->schema([
+                            Forms\Components\Toggle::make('server_tools_web_fetch_enabled')
+                                ->label('Enable web fetch'),
+                            Forms\Components\Select::make('server_tools_web_fetch_engine')
+                                ->label('Engine')
+                                ->options([
+                                    'auto' => 'auto',
+                                    'native' => 'native',
+                                    'exa' => 'exa',
+                                    'firecrawl' => 'firecrawl',
+                                    'parallel' => 'parallel',
+                                ])
+                                ->default('auto')
+                                ->visible(fn (Get $get): bool => (bool) $get('server_tools_web_fetch_enabled')),
+                        ])
+                        ->columns(3),
+                ]),
+
+            // (g) Limits ------------------------------------------------------
+            Forms\Components\Section::make('Limits')
+                ->schema([
+                    Forms\Components\TextInput::make('rate_limit_per_minute')
+                        ->numeric()
+                        ->minValue(1)
+                        ->helperText('Blank = config default.'),
+                    Forms\Components\TextInput::make('max_daily_cost_usd')
+                        ->numeric()
+                        ->minValue(0)
+                        ->prefix('$')
+                        ->helperText('Blank = config default. Rolling 24h USD ceiling.'),
+                ])
+                ->columns(2),
+
+            // (h) Visibility & status ----------------------------------------
+            Forms\Components\Section::make('Visibility & status')
+                ->schema([
+                    Forms\Components\Select::make('visibility')
+                        ->options([
+                            'internal' => 'Internal only',
+                            'public' => 'Public (HTTP API)',
+                            'both' => 'Both',
+                        ])
+                        ->default('internal')
+                        ->required()
+                        ->helperText('"public"/"both" are reachable over the Sanctum HTTP API.'),
+                    Forms\Components\Toggle::make('is_active')
+                        ->default(true),
+                    Forms\Components\Toggle::make('supports_vision'),
+                    Forms\Components\Toggle::make('supports_tools'),
+                ])
+                ->columns(2),
+        ]);
+    }
+
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->columns([
+                Tables\Columns\TextColumn::make('slug')
+                    ->searchable()
+                    ->copyable()
+                    ->weight('bold'),
+                Tables\Columns\TextColumn::make('name')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('model')
+                    ->label('Model')
+                    ->getStateUsing(function (object $record): string {
+                        $models = $record->models ?? [];
+                        $primary = $models[0] ?? '—';
+                        $extra = max(0, count($models) - 1);
+
+                        return $extra > 0 ? $primary.'  +'.$extra : (string) $primary;
+                    })
+                    ->badge()
+                    ->color('gray'),
+                Tables\Columns\TextColumn::make('visibility')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'public' => 'success',
+                        'both' => 'warning',
+                        default => 'gray',
+                    }),
+                Tables\Columns\ToggleColumn::make('is_active'),
+                Tables\Columns\TextColumn::make('created_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\TernaryFilter::make('is_active'),
+                Tables\Filters\SelectFilter::make('visibility')
+                    ->options([
+                        'internal' => 'Internal',
+                        'public' => 'Public',
+                        'both' => 'Both',
+                    ]),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                static::testAction(),
+                static::versionsAction(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListAiIntegrations::route('/'),
+            'create' => Pages\CreateAiIntegration::route('/create'),
+            'edit' => Pages\EditAiIntegration::route('/{record}/edit'),
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Shared actions
+    // -------------------------------------------------------------------------
+
+    /**
+     * "Draft with AI" — a form header action on the system-prompt section.
+     * Only shown when the prompt builder is available (key set + enabled).
+     */
+    public static function draftWithAiAction(): Forms\Components\Actions\Action
+    {
+        return Forms\Components\Actions\Action::make('draftWithAi')
+            ->label('Draft with AI')
+            ->icon('heroicon-m-sparkles')
+            ->visible(fn (): bool => app(PromptBuilderService::class)->isAvailable())
+            ->form([
+                Forms\Components\Textarea::make('brief')
+                    ->label('Describe what this integration should do')
+                    ->required()
+                    ->rows(4)
+                    ->placeholder('e.g. Summarize a sales lead into 3 bullet points given the company name and notes.'),
+            ])
+            ->action(function (array $data, Get $get, Set $set): void {
+                try {
+                    $result = app(PromptBuilderService::class)->build(
+                        $data['brief'],
+                        (string) ($get('system_prompt') ?? ''),
+                    );
+                } catch (Throwable $e) {
+                    Notification::make()
+                        ->danger()
+                        ->title('Prompt builder failed')
+                        ->body($e->getMessage())
+                        ->send();
+
+                    return;
+                }
+
+                $set('system_prompt', $result['system_prompt']);
+                $set('prompt_args', $result['prompt_args']);
+
+                Notification::make()
+                    ->success()
+                    ->title('Draft inserted')
+                    ->body($result['notes'] ?? 'Review the prompt and variables, then save.')
+                    ->send();
+            });
+    }
+
+    /**
+     * "Test" — run a one-off invocation against the active version using a
+     * modal form built from its prompt_args. Reused on the table and the edit
+     * header. Disabled when there is no active version.
+     */
+    public static function testAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('test')
+            ->label('Test')
+            ->icon('heroicon-m-play')
+            ->color('gray')
+            ->disabled(fn (object $record): bool => $record->activeVersion === null)
+            ->modalHeading(fn (object $record): string => 'Test "'.$record->name.'"')
+            ->modalSubmitActionLabel('Run')
+            ->form(fn (object $record): array => static::testFormSchema($record))
+            ->action(function (object $record, array $data): void {
+                $version = $record->activeVersion;
+                if ($version === null) {
+                    Notification::make()->danger()->title('No active version to test')->send();
+
+                    return;
+                }
+
+                // Split the collected fields: prompt args (arg_*) vs. extra message.
+                $args = [];
+                foreach (($version->prompt_args ?? []) as $arg) {
+                    $name = $arg['name'] ?? null;
+                    if (! is_string($name)) {
+                        continue;
+                    }
+                    $key = 'arg_'.$name;
+                    if (array_key_exists($key, $data) && $data[$key] !== null && $data[$key] !== '') {
+                        $args[$name] = static::castArgForTest($data[$key], (string) ($arg['type'] ?? 'string'));
+                    }
+                }
+
+                $messages = [];
+                if (! empty($data['extra_message'])) {
+                    $messages[] = ['role' => 'user', 'content' => $data['extra_message']];
+                }
+
+                try {
+                    $result = app(AiGateway::class)->invokeVersion($record, $version, $args, $messages, [
+                        '_caller_type' => 'admin-test',
+                        '_caller_id' => (string) (auth()->id() ?? 'console'),
+                    ]);
+                } catch (Throwable $e) {
+                    Notification::make()
+                        ->danger()
+                        ->title('Test invocation failed')
+                        ->body($e->getMessage())
+                        ->persistent()
+                        ->send();
+
+                    return;
+                }
+
+                $usage = $result->usage;
+                $body = sprintf(
+                    "%s\n\nmodel: %s | tokens: %s→%s | cost: $%s | %s ms",
+                    mb_strimwidth($result->text, 0, 600, '…'),
+                    $result->model_used,
+                    $usage['prompt_tokens'] ?? '?',
+                    $usage['completion_tokens'] ?? '?',
+                    $result->cost_usd !== null ? number_format($result->cost_usd, 6) : '?',
+                    $result->latency_ms ?? '?',
+                );
+
+                Notification::make()
+                    ->success()
+                    ->title('Test succeeded')
+                    ->body($body)
+                    ->persistent()
+                    ->send();
+            });
+    }
+
+    /**
+     * Build one modal field per prompt arg, plus an optional extra user message.
+     *
+     * @return array<int,Component>
+     */
+    public static function testFormSchema(object $record): array
+    {
+        $fields = [];
+
+        foreach (($record->activeVersion?->prompt_args ?? []) as $arg) {
+            $name = $arg['name'] ?? null;
+            if (! is_string($name)) {
+                continue;
+            }
+            $type = (string) ($arg['type'] ?? 'string');
+            $required = (bool) ($arg['required'] ?? false);
+            $label = $name.($required ? ' *' : '');
+            $help = $arg['description'] ?? null;
+
+            $field = match ($type) {
+                'boolean' => Forms\Components\Toggle::make('arg_'.$name)->label($name),
+                'number' => Forms\Components\TextInput::make('arg_'.$name)->label($label)->numeric(),
+                'array', 'object', 'json' => Forms\Components\Textarea::make('arg_'.$name)
+                    ->label($label.' (JSON)')
+                    ->rows(3),
+                default => Forms\Components\TextInput::make('arg_'.$name)->label($label),
+            };
+
+            if ($required && $type !== 'boolean') {
+                $field = $field->required();
+            }
+            if (is_string($help) && $help !== '') {
+                $field = $field->helperText($help);
+            }
+
+            $fields[] = $field;
+        }
+
+        $fields[] = Forms\Components\Textarea::make('extra_message')
+            ->label('Extra user message (optional)')
+            ->rows(3)
+            ->helperText('Appended as a user turn after the rendered system prompt.');
+
+        return $fields;
+    }
+
+    /**
+     * Coerce a raw modal value into the type the renderer expects.
+     */
+    public static function castArgForTest(mixed $value, string $type): mixed
+    {
+        return match ($type) {
+            'number' => is_numeric($value) ? $value + 0 : $value,
+            'boolean' => (bool) $value,
+            'array', 'object' => is_string($value) ? (json_decode($value, true) ?? $value) : $value,
+            // 'json' stays a string — the renderer validates it as a JSON string.
+            default => $value,
+        };
+    }
+
+    /**
+     * "Versions" — list this integration's versions with an Activate button.
+     */
+    public static function versionsAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('versions')
+            ->label('Versions')
+            ->icon('heroicon-m-clock')
+            ->color('gray')
+            ->modalHeading(fn (object $record): string => 'Versions of "'.$record->name.'"')
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('Close')
+            ->infolist(function (object $record): array {
+                // Render a compact, read-only list with inline Activate actions.
+                $entries = [];
+                foreach ($record->versions as $version) {
+                    $entries[] = TextEntry::make('v'.$version->id)
+                        ->hiddenLabel()
+                        ->state(sprintf(
+                            'v%d — %s%s',
+                            $version->version_number,
+                            $version->created_at?->toDayDateTimeString() ?? 'unknown date',
+                            $version->is_active ? '  (active)' : '',
+                        ))
+                        ->badge()
+                        ->color($version->is_active ? 'success' : 'gray')
+                        ->suffixAction(
+                            $version->is_active
+                                ? null
+                                : Action::make('activate_'.$version->id)
+                                    ->label('Activate')
+                                    ->icon('heroicon-m-check')
+                                    ->requiresConfirmation()
+                                    ->action(function () use ($version): void {
+                                        app(AiIntegrationService::class)->activate($version);
+
+                                        Notification::make()
+                                            ->success()
+                                            ->title('Version v'.$version->version_number.' activated')
+                                            ->send();
+                                    }),
+                        );
+                }
+
+                return $entries;
+            });
+    }
+
+    // -------------------------------------------------------------------------
+    // Save helpers — shared by Create & Edit pages.
+    // -------------------------------------------------------------------------
+
+    /** Registry columns owned by the AiIntegration model. */
+    public const REGISTRY_KEYS = [
+        'slug', 'name', 'description', 'provider', 'visibility',
+        'is_active', 'supports_vision', 'supports_tools',
+        'rate_limit_per_minute', 'max_daily_cost_usd',
+    ];
+
+    /** Version-only keys that must NOT be passed to the model's save/update. */
+    public const VERSION_KEYS = [
+        'system_prompt', 'system_prompt_cacheable', 'models',
+        'default_params', 'prompt_args', 'server_tools',
+    ];
+
+    /**
+     * Pull the version attributes (in the shape saveVersion expects) out of a
+     * flat form-data array, reassembling the nested server_tools shape.
+     *
+     * @param  array<string,mixed>  $data
+     * @return array<string,mixed>
+     */
+    public static function extractVersionAttributes(array $data): array
+    {
+        return [
+            'system_prompt' => (string) ($data['system_prompt'] ?? ''),
+            'system_prompt_cacheable' => (bool) ($data['system_prompt_cacheable'] ?? true),
+            'models' => array_values($data['models'] ?? []),
+            'default_params' => static::normalizeParams($data['default_params'] ?? null),
+            'prompt_args' => array_values($data['prompt_args'] ?? []),
+            'server_tools' => static::assembleServerTools($data),
+        ];
+    }
+
+    /**
+     * Strip version-only keys (and the flattened server-tool toggles) so only
+     * registry columns reach the model.
+     *
+     * @param  array<string,mixed>  $data
+     * @return array<string,mixed>
+     */
+    public static function onlyRegistryAttributes(array $data): array
+    {
+        return array_intersect_key($data, array_flip(static::REGISTRY_KEYS));
+    }
+
+    /**
+     * KeyValue gives string values; leave them as strings (the gateway parses
+     * numerics/JSON downstream). null/empty → null so the column stays clean.
+     *
+     * @return array<string,mixed>|null
+     */
+    public static function normalizeParams(mixed $params): ?array
+    {
+        if (! is_array($params) || $params === []) {
+            return null;
+        }
+
+        return $params;
+    }
+
+    /**
+     * Reassemble the nested server_tools shape from the flattened form toggles.
+     *
+     * @param  array<string,mixed>  $data
+     * @return array<string,mixed>|null
+     */
+    public static function assembleServerTools(array $data): ?array
+    {
+        $tools = [];
+
+        if (! empty($data['server_tools_web_search_enabled'])) {
+            $search = ['enabled' => true];
+            if (! empty($data['server_tools_web_search_engine'])) {
+                $search['engine'] = $data['server_tools_web_search_engine'];
+            }
+            if (isset($data['server_tools_web_search_max_results']) && $data['server_tools_web_search_max_results'] !== '' && $data['server_tools_web_search_max_results'] !== null) {
+                $search['max_results'] = (int) $data['server_tools_web_search_max_results'];
+            }
+            $tools['web_search'] = $search;
+        }
+
+        if (! empty($data['server_tools_web_fetch_enabled'])) {
+            $fetch = ['enabled' => true];
+            if (! empty($data['server_tools_web_fetch_engine'])) {
+                $fetch['engine'] = $data['server_tools_web_fetch_engine'];
+            }
+            $tools['web_fetch'] = $fetch;
+        }
+
+        return $tools === [] ? null : $tools;
+    }
+
+    /**
+     * Flatten a stored server_tools shape back into the form's toggle fields.
+     *
+     * @param  array<string,mixed>|null  $serverTools
+     * @return array<string,mixed>
+     */
+    public static function flattenServerTools(?array $serverTools): array
+    {
+        $serverTools ??= [];
+        $search = $serverTools['web_search'] ?? [];
+        $fetch = $serverTools['web_fetch'] ?? [];
+
+        return [
+            'server_tools_web_search_enabled' => (bool) ($search['enabled'] ?? false),
+            'server_tools_web_search_engine' => $search['engine'] ?? 'auto',
+            'server_tools_web_search_max_results' => $search['max_results'] ?? null,
+            'server_tools_web_fetch_enabled' => (bool) ($fetch['enabled'] ?? false),
+            'server_tools_web_fetch_engine' => $fetch['engine'] ?? 'auto',
+        ];
+    }
+}

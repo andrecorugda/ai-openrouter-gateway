@@ -1,0 +1,19 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+    excludePaths:
+        - src/Filament/*
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        # larastan types hasOne relations as non-null; activeVersion is
+        # genuinely nullable in the model's proxy accessors, so ?-> is correct.
+        - identifier: nullsafe.neverNull
+          path: src/Models/AiIntegration.php
+        # currentAccessToken() is provided by Sanctum's HasApiTokens trait,
+        # which larastan can't see on the framework's base User type.
+        - identifier: method.notFound
+          path: src/Http/Controllers/InvokeAiIntegrationController.php

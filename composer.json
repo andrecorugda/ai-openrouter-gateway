@@ -1,0 +1,77 @@
+{
+    "name": "andre/ai-openrouter-gateway",
+    "description": "A self-hostable, OpenRouter-backed AI gateway for Laravel — named integrations, versioned prompts, telemetry, rate & cost limiting, a Sanctum HTTP API, and a Filament admin UI with an AI-assisted prompt builder.",
+    "keywords": [
+        "laravel",
+        "filament",
+        "openrouter",
+        "ai",
+        "llm",
+        "gateway",
+        "prompt-management"
+    ],
+    "homepage": "https://github.com/andrecorugda/ai-openrouter-gateway",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Andre Corugda",
+            "email": "andre.corugda@ins-global.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/contracts": "^11.0|^12.0",
+        "illuminate/database": "^11.0|^12.0",
+        "illuminate/http": "^11.0|^12.0",
+        "illuminate/support": "^11.0|^12.0",
+        "laravel/sanctum": "^4.0",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "require-dev": {
+        "filament/filament": "^3.2",
+        "orchestra/testbench": "^9.0|^10.0",
+        "pestphp/pest": "^3.0",
+        "pestphp/pest-plugin-laravel": "^3.0",
+        "laravel/pint": "^1.17",
+        "larastan/larastan": "^3.0"
+    },
+    "suggest": {
+        "filament/filament": "Required to use the bundled admin UI (^3.2)."
+    },
+    "autoload": {
+        "psr-4": {
+            "Andre\\AiGateway\\": "src/",
+            "Andre\\AiGateway\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Andre\\AiGateway\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Andre\\AiGateway\\AiGatewayServiceProvider"
+            ],
+            "aliases": {
+                "AiGateway": "Andre\\AiGateway\\Facades\\AiGateway"
+            }
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "lint": "vendor/bin/pint",
+        "lint:test": "vendor/bin/pint --test",
+        "analyse": "vendor/bin/phpstan analyse"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
