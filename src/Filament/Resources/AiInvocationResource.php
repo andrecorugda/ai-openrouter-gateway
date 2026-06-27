@@ -175,7 +175,11 @@ class AiInvocationResource extends Resource
                         ->label('OpenRouter generation id')
                         ->placeholder('—')
                         ->copyable()
-                        ->tooltip('Look this id up in your OpenRouter dashboard (openrouter.ai/activity) or via GET /api/v1/generation?id=…'),
+                        ->url(fn ($record): ?string => $record->openrouter_generation_id
+                            ? 'https://openrouter.ai/logs?transaction='.rawurlencode($record->openrouter_generation_id)
+                            : null, true)
+                        ->color('primary')
+                        ->tooltip('Open in OpenRouter logs (new tab) — click to copy the id.'),
                 ]),
             Infolists\Components\Section::make('Error')
                 ->visible(fn ($record): bool => $record->status === 'error')
