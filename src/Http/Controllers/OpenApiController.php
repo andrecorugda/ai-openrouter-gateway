@@ -21,10 +21,18 @@ class OpenApiController
 
     public function docs(): View
     {
+        // Scalar reads its options from a JSON `data-configuration` attribute;
+        // encode it attribute-safe so it survives either quote style.
+        $configuration = json_encode(
+            ['darkMode' => (bool) config('ai-gateway.api.docs.dark_mode', true)],
+            JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP,
+        );
+
         return view('ai-gateway::docs', [
             'specUrl' => route('ai-gateway.openapi'),
             'title' => (string) config('app.name', 'Laravel').' — AI Gateway API',
             'scriptSrc' => (string) config('ai-gateway.api.docs.script_src', 'https://cdn.jsdelivr.net/npm/@scalar/api-reference'),
+            'configuration' => $configuration !== false ? $configuration : '{}',
         ]);
     }
 }

@@ -293,7 +293,7 @@ The package serves a **live OpenAPI 3 document built from your integrations**, p
 
 Every API-visible integration becomes real endpoints: `POST /{slug}/chat` with a request body shaped from its **declared variables** (types + required flags) and the allow-listed `options`, plus `/{slug}/start` and `/{slug}/converse` when the integration is **conversational**. The model and prompt-caching mode appear in each endpoint's description.
 
-![Interactive API docs inside Filament](screenshots/filament-api-docs.png?v=2)
+![Interactive API docs inside Filament](screenshots/filament-api-docs.png?v=3)
 
 Gate or disable it via `config('ai-gateway.api.docs')` — add `middleware` (e.g. `['auth']`) to make it private, or override `script_src` to self-host the renderer instead of the CDN.
 

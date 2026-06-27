@@ -5,7 +5,13 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.1] - 2026-06-27
+## [1.3.2] - 2026-06-27
+
+### Added
+- **Dark-mode API docs.** The Scalar reference (standalone `{prefix}/docs` page and the panel-embedded "API docs" iframe) now renders in dark mode, matching Filament's dark theme. Configurable via `config('ai-gateway.api.docs.dark_mode')` / `AI_GATEWAY_API_DOCS_DARK` (default `true`; set `false` for light).
+
+### Docs
+- Refreshed the API-docs screenshots to the dark theme.## [1.3.1] - 2026-06-27
 
 ### Added
 - **API docs as a Filament page** — the interactive Scalar reference is now embedded in the admin panel (under AI & Automation → API docs) via an iframe, so admins can browse/test the API without leaving Filament. Hidden when the API or its docs are disabled.
