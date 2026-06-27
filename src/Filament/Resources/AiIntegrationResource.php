@@ -74,78 +74,85 @@ class AiIntegrationResource extends Resource
     {
         return $form->schema([
 
-            // (a) Identity ----------------------------------------------------
-            Forms\Components\Section::make('Identity')
-                ->description('Stable registry fields. The slug is the call key and cannot change after creation.')
-                ->schema([
-                    Forms\Components\TextInput::make('slug')
-                        ->required()
-                        ->regex('/^[a-z][a-z0-9_-]*$/')
-                        ->maxLength(64)
-                        ->helperText('Lowercase, dashes/underscores only. Used as the invocation key, e.g. "lead-summary".')
-                        // Immutable once created: shown read-only and excluded from the update payload.
-                        ->disabled(fn (?object $record): bool => $record !== null)
-                        ->dehydrated(fn (?object $record): bool => $record === null),
-                    Forms\Components\TextInput::make('name')
-                        ->required()
-                        ->maxLength(160),
-                    Forms\Components\Textarea::make('description')
-                        ->rows(2)
-                        ->maxLength(1000)
-                        ->columnSpanFull(),
-                ])
-                ->columns(2),
+            // Row 1: Identity + Models side by side.
+            Forms\Components\Grid::make(2)->schema([
 
-            // (b) Models ------------------------------------------------------
-            Forms\Components\Section::make('Models')
-                ->description('Pick from the live OpenRouter catalog. The primary is tried first; fallbacks follow in order.')
-                ->schema([
-                    Forms\Components\Select::make('primary_model')
-                        ->label('Primary model')
-                        ->options(fn (): array => app(OpenRouterModelCatalog::class)->options())
-                        ->searchable()
-                        ->required()
-                        ->live()
-                        ->default((string) config('ai-gateway.default_model', 'anthropic/claude-sonnet-4'))
-                        ->helperText(function (Get $get): ?string {
-                            $id = (string) ($get('primary_model') ?? '');
-                            if ($id === '') {
-                                return null;
-                            }
-                            $model = app(OpenRouterModelCatalog::class)->find($id);
-                            if ($model === null) {
-                                return null;
-                            }
+                // (a) Identity ----------------------------------------------------
+                Forms\Components\Section::make('Identity')
+                    ->description('Stable registry fields. The slug is the call key and cannot change after creation.')
+                    ->schema([
+                        Forms\Components\TextInput::make('slug')
+                            ->required()
+                            ->regex('/^[a-z][a-z0-9_-]*$/')
+                            ->maxLength(64)
+                            ->helperText('Lowercase, dashes/underscores only. Used as the invocation key, e.g. "lead-summary".')
+                            // Immutable once created: shown read-only and excluded from the update payload.
+                            ->disabled(fn (?object $record): bool => $record !== null)
+                            ->dehydrated(fn (?object $record): bool => $record === null),
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->maxLength(160),
+                        Forms\Components\Textarea::make('description')
+                            ->rows(2)
+                            ->maxLength(1000)
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2)
+                    ->columnSpan(1),
 
-                            return static::modelMetaSummary($model);
-                        })
-                        ->afterStateUpdated(function ($state, Get $get, Set $set): void {
-                            // Seed the generation params with this model's supported
-                            // params WITHOUT overwriting any keys the admin already set.
-                            $id = (string) ($state ?? '');
-                            if ($id === '') {
-                                return;
-                            }
-                            $current = is_array($get('default_params')) ? $get('default_params') : [];
-                            $suggested = app(OpenRouterModelCatalog::class)->defaultParametersFor($id);
-
-                            $merged = $current;
-                            foreach ($suggested as $param => $value) {
-                                if (! array_key_exists($param, $merged)) {
-                                    $merged[$param] = (string) $value;
+                // (b) Models ------------------------------------------------------
+                Forms\Components\Section::make('Models')
+                    ->description('Pick from the live OpenRouter catalog. The primary is tried first; fallbacks follow in order.')
+                    ->schema([
+                        Forms\Components\Select::make('primary_model')
+                            ->label('Primary model')
+                            ->options(fn (): array => app(OpenRouterModelCatalog::class)->options())
+                            ->searchable()
+                            ->required()
+                            ->live()
+                            ->default((string) config('ai-gateway.default_model', 'anthropic/claude-sonnet-4'))
+                            ->helperText(function (Get $get): ?string {
+                                $id = (string) ($get('primary_model') ?? '');
+                                if ($id === '') {
+                                    return null;
                                 }
-                            }
+                                $model = app(OpenRouterModelCatalog::class)->find($id);
+                                if ($model === null) {
+                                    return null;
+                                }
 
-                            $set('default_params', $merged);
-                        }),
-                    Forms\Components\Select::make('fallback_models')
-                        ->label('Fallback models')
-                        ->options(fn (): array => app(OpenRouterModelCatalog::class)->options())
-                        ->multiple()
-                        ->searchable()
-                        ->helperText('Tried in order if the primary is unavailable.'),
-                ])
-                ->columns(1),
+                                return static::modelMetaSummary($model);
+                            })
+                            ->afterStateUpdated(function ($state, Get $get, Set $set): void {
+                                // Seed the generation params with this model's supported
+                                // params WITHOUT overwriting any keys the admin already set.
+                                $id = (string) ($state ?? '');
+                                if ($id === '') {
+                                    return;
+                                }
+                                $current = is_array($get('default_params')) ? $get('default_params') : [];
+                                $suggested = app(OpenRouterModelCatalog::class)->defaultParametersFor($id);
+
+                                $merged = $current;
+                                foreach ($suggested as $param => $value) {
+                                    if (! array_key_exists($param, $merged)) {
+                                        $merged[$param] = (string) $value;
+                                    }
+                                }
+
+                                $set('default_params', $merged);
+                            }),
+                        Forms\Components\Select::make('fallback_models')
+                            ->label('Fallback models')
+                            ->options(fn (): array => app(OpenRouterModelCatalog::class)->options())
+                            ->multiple()
+                            ->searchable()
+                            ->helperText('Tried in order if the primary is unavailable.'),
+                    ])
+                    ->columns(1)
+                    ->columnSpan(1),
+
+            ]),
 
             // (c) Prompt + variables -----------------------------------------
             // Variables are declared via a modal ("Manage variables"); the
@@ -204,84 +211,92 @@ class AiIntegrationResource extends Resource
                         ->columnSpanFull(),
                 ]),
 
-            // (f) Server tools ------------------------------------------------
-            Forms\Components\Section::make('Server tools')
-                ->description('OpenRouter-hosted tools the model may call. Persisted into the server_tools shape.')
-                ->schema([
-                    Forms\Components\Fieldset::make('Web search')
-                        ->schema([
-                            Forms\Components\Toggle::make('server_tools_web_search_enabled')
-                                ->label('Enable web search'),
-                            Forms\Components\Select::make('server_tools_web_search_engine')
-                                ->label('Engine')
-                                ->options([
-                                    'auto' => 'auto',
-                                    'native' => 'native',
-                                    'exa' => 'exa',
-                                    'firecrawl' => 'firecrawl',
-                                    'parallel' => 'parallel',
-                                ])
-                                ->default('auto')
-                                ->visible(fn (Get $get): bool => (bool) $get('server_tools_web_search_enabled')),
-                            Forms\Components\TextInput::make('server_tools_web_search_max_results')
-                                ->label('Max results')
-                                ->numeric()
-                                ->minValue(1)
-                                ->visible(fn (Get $get): bool => (bool) $get('server_tools_web_search_enabled')),
-                        ])
-                        ->columns(3),
-                    Forms\Components\Fieldset::make('Web fetch')
-                        ->schema([
-                            Forms\Components\Toggle::make('server_tools_web_fetch_enabled')
-                                ->label('Enable web fetch'),
-                            Forms\Components\Select::make('server_tools_web_fetch_engine')
-                                ->label('Engine')
-                                ->options([
-                                    'auto' => 'auto',
-                                    'native' => 'native',
-                                    'exa' => 'exa',
-                                    'firecrawl' => 'firecrawl',
-                                    'parallel' => 'parallel',
-                                ])
-                                ->default('auto')
-                                ->visible(fn (Get $get): bool => (bool) $get('server_tools_web_fetch_enabled')),
-                        ])
-                        ->columns(3),
-                ]),
+            // Row: Server tools + Limits + Visibility in three columns.
+            Forms\Components\Grid::make(3)->schema([
 
-            // (g) Limits ------------------------------------------------------
-            Forms\Components\Section::make('Limits')
-                ->schema([
-                    Forms\Components\TextInput::make('rate_limit_per_minute')
-                        ->numeric()
-                        ->minValue(1)
-                        ->helperText('Blank = config default.'),
-                    Forms\Components\TextInput::make('max_daily_cost_usd')
-                        ->numeric()
-                        ->minValue(0)
-                        ->prefix('$')
-                        ->helperText('Blank = config default. Rolling 24h USD ceiling.'),
-                ])
-                ->columns(2),
+                // (f) Server tools ------------------------------------------------
+                Forms\Components\Section::make('Server tools')
+                    ->description('OpenRouter-hosted tools the model may call. Persisted into the server_tools shape.')
+                    ->schema([
+                        Forms\Components\Fieldset::make('Web search')
+                            ->schema([
+                                Forms\Components\Toggle::make('server_tools_web_search_enabled')
+                                    ->label('Enable web search'),
+                                Forms\Components\Select::make('server_tools_web_search_engine')
+                                    ->label('Engine')
+                                    ->options([
+                                        'auto' => 'auto',
+                                        'native' => 'native',
+                                        'exa' => 'exa',
+                                        'firecrawl' => 'firecrawl',
+                                        'parallel' => 'parallel',
+                                    ])
+                                    ->default('auto')
+                                    ->visible(fn (Get $get): bool => (bool) $get('server_tools_web_search_enabled')),
+                                Forms\Components\TextInput::make('server_tools_web_search_max_results')
+                                    ->label('Max results')
+                                    ->numeric()
+                                    ->minValue(1)
+                                    ->visible(fn (Get $get): bool => (bool) $get('server_tools_web_search_enabled')),
+                            ])
+                            ->columns(1),
+                        Forms\Components\Fieldset::make('Web fetch')
+                            ->schema([
+                                Forms\Components\Toggle::make('server_tools_web_fetch_enabled')
+                                    ->label('Enable web fetch'),
+                                Forms\Components\Select::make('server_tools_web_fetch_engine')
+                                    ->label('Engine')
+                                    ->options([
+                                        'auto' => 'auto',
+                                        'native' => 'native',
+                                        'exa' => 'exa',
+                                        'firecrawl' => 'firecrawl',
+                                        'parallel' => 'parallel',
+                                    ])
+                                    ->default('auto')
+                                    ->visible(fn (Get $get): bool => (bool) $get('server_tools_web_fetch_enabled')),
+                            ])
+                            ->columns(1),
+                    ])
+                    ->columnSpan(1),
 
-            // (h) Visibility & status ----------------------------------------
-            Forms\Components\Section::make('Visibility & status')
-                ->schema([
-                    Forms\Components\Select::make('visibility')
-                        ->options([
-                            'internal' => 'Internal only',
-                            'public' => 'Public (HTTP API)',
-                            'both' => 'Both',
-                        ])
-                        ->default('internal')
-                        ->required()
-                        ->helperText('"public"/"both" are reachable over the Sanctum HTTP API.'),
-                    Forms\Components\Toggle::make('is_active')
-                        ->default(true),
-                    Forms\Components\Toggle::make('supports_vision'),
-                    Forms\Components\Toggle::make('supports_tools'),
-                ])
-                ->columns(2),
+                // (g) Limits ------------------------------------------------------
+                Forms\Components\Section::make('Limits')
+                    ->schema([
+                        Forms\Components\TextInput::make('rate_limit_per_minute')
+                            ->numeric()
+                            ->minValue(1)
+                            ->helperText('Blank = config default.'),
+                        Forms\Components\TextInput::make('max_daily_cost_usd')
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix('$')
+                            ->helperText('Blank = config default. Rolling 24h USD ceiling.'),
+                    ])
+                    ->columns(1)
+                    ->columnSpan(1),
+
+                // (h) Visibility & status ----------------------------------------
+                Forms\Components\Section::make('Visibility & status')
+                    ->schema([
+                        Forms\Components\Select::make('visibility')
+                            ->options([
+                                'internal' => 'Internal only',
+                                'public' => 'Public (HTTP API)',
+                                'both' => 'Both',
+                            ])
+                            ->default('internal')
+                            ->required()
+                            ->helperText('"public"/"both" are reachable over the Sanctum HTTP API.'),
+                        Forms\Components\Toggle::make('is_active')
+                            ->default(true),
+                        Forms\Components\Toggle::make('supports_vision'),
+                        Forms\Components\Toggle::make('supports_tools'),
+                    ])
+                    ->columns(1)
+                    ->columnSpan(1),
+
+            ]),
         ]);
     }
 
