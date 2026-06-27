@@ -5,6 +5,11 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-06-27
+
+### Fixed
+- Invocation detail linked to `openrouter.ai/activity/{id}`, which isn't a valid OpenRouter route (it 404s as a model slug). The `openrouter_generation_id` is now shown as a **copyable** value with a hint to look it up in the OpenRouter dashboard or via `GET /api/v1/generation?id=…`.
+
 ## [1.1.1] - 2026-06-27
 
 ### Fixed

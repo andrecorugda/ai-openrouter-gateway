@@ -365,7 +365,7 @@ AiInvocation::where('ai_integration_id', $id)
     ->sum('cost_usd');
 ```
 
-Each row links to `https://openrouter.ai/activity/{generation_id}` for full provider-side cost forensics.
+Each row keeps OpenRouter's `openrouter_generation_id` — look it up in your OpenRouter dashboard (`openrouter.ai/activity`) or via `GET /api/v1/generation?id=…` for full provider-side cost forensics.
 
 ## Testing
 

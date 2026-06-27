@@ -172,12 +172,10 @@ class AiInvocationResource extends Resource
                     Infolists\Components\TextEntry::make('latency_ms')->suffix(' ms')->placeholder('—'),
                     Infolists\Components\TextEntry::make('citation_count')->label('Citations')->placeholder('—'),
                     Infolists\Components\TextEntry::make('openrouter_generation_id')
-                        ->label('OpenRouter generation')
+                        ->label('OpenRouter generation id')
                         ->placeholder('—')
-                        ->url(fn ($record): ?string => $record->openrouter_generation_id
-                            ? 'https://openrouter.ai/activity/'.$record->openrouter_generation_id
-                            : null, true)
-                        ->color('primary'),
+                        ->copyable()
+                        ->tooltip('Look this id up in your OpenRouter dashboard (openrouter.ai/activity) or via GET /api/v1/generation?id=…'),
                 ]),
             Infolists\Components\Section::make('Error')
                 ->visible(fn ($record): bool => $record->status === 'error')
