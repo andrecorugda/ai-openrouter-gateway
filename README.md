@@ -312,7 +312,7 @@ vendor/bin/pest
 
 ## Security
 
-The gateway never sends data to anyone but OpenRouter. Rotate your key by updating `OPENROUTER_API_KEY` and redeploying. If you discover a vulnerability, please email andre.corugda@ins-global.com.
+The gateway never sends data to anyone but OpenRouter. Rotate your key by updating `OPENROUTER_API_KEY` and redeploying. If you discover a vulnerability, please email andre.alarcon.corugda@gmail.com.
 
 ## Credits
 
