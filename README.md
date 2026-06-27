@@ -240,13 +240,13 @@ You get:
 
 | | |
 |---|---|
-| **Integration form** — catalog model picker, per-model params, caching, prompt editor | ![Create integration](screenshots/integration-edit.png) |
-| **Integrations list** | ![Integrations](screenshots/integrations-list.png) |
-| **Invocations** — telemetry with Σ summaries | ![Invocations](screenshots/invocations.png) |
-| **Invocation detail** — per-call tokens, cost, latency, OpenRouter id | ![Invocation detail](screenshots/invocation-detail.png) |
-| **Versions** — load a past version into the form | ![Versions](screenshots/modal-versions.png) |
-| **General settings** | ![General settings](screenshots/general-settings.png) |
-| **API tokens** — mint scoped tokens; one-time value with one-click copy | ![API tokens](screenshots/api-tokens-created.png) |
+| **Integration form** — catalog model picker, per-model params, caching, prompt editor | ![Create integration](screenshots/integration-edit.png?v=2) |
+| **Integrations list** | ![Integrations](screenshots/integrations-list.png?v=2) |
+| **Invocations** — telemetry with Σ summaries | ![Invocations](screenshots/invocations.png?v=2) |
+| **Invocation detail** — per-call tokens, cost, latency, OpenRouter id | ![Invocation detail](screenshots/invocation-detail.png?v=2) |
+| **Versions** — load a past version into the form | ![Versions](screenshots/modal-versions.png?v=2) |
+| **General settings** | ![General settings](screenshots/general-settings.png?v=2) |
+| **API tokens** — mint scoped tokens; one-time value with one-click copy | ![API tokens](screenshots/api-tokens-created.png?v=2) |
 
 ## Conversations (multi-turn threads)
 
@@ -293,7 +293,7 @@ The package serves a **live OpenAPI 3 document built from your integrations**, p
 
 Every API-visible integration becomes real endpoints: `POST /{slug}/chat` with a request body shaped from its **declared variables** (types + required flags) and the allow-listed `options`, plus `/{slug}/start` and `/{slug}/converse` when the integration is **conversational**. The model and prompt-caching mode appear in each endpoint's description.
 
-![Interactive API docs inside Filament](screenshots/filament-api-docs.png)
+![Interactive API docs inside Filament](screenshots/filament-api-docs.png?v=2)
 
 Gate or disable it via `config('ai-gateway.api.docs')` — add `middleware` (e.g. `['auth']`) to make it private, or override `script_src` to self-host the renderer instead of the CDN.
 
