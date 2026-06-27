@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament;
 
+use Andre\AiGateway\Filament\Pages\ApiDocs;
 use Andre\AiGateway\Filament\Pages\ApiTokens;
 use Andre\AiGateway\Filament\Pages\GeneralSettings;
 use Andre\AiGateway\Filament\Resources\AiIntegrationResource;
@@ -45,6 +46,7 @@ class AiGatewayPlugin implements Plugin
             ->pages([
                 GeneralSettings::class,
                 ApiTokens::class,
+                ApiDocs::class,
             ]);
     }
 

@@ -225,6 +225,7 @@ You get:
 - **Invocations** — a read-only telemetry browser: filter by status / caller / integration / date, with cost + token Σ summaries and a per-call detail modal (usage, error, OpenRouter generation link).
 - **General settings** — toggle the HTTP API, toggle the prompt builder, and pick the helper model (also a catalog-backed Select).
 - **API Tokens** — mint (with an optional expiry) and revoke scoped invocation tokens; the one-time token has a one-click **Copy to clipboard** button.
+- **API docs** — the interactive OpenAPI (Scalar) reference embedded right in the panel; browse and test every integration's endpoints without leaving Filament.
 
 ### Screenshots
 
@@ -278,10 +279,11 @@ The package serves a **live OpenAPI 3 document built from your integrations**, p
 
 - `GET {prefix}/docs` — the docs UI (paste a token, try any endpoint live)
 - `GET {prefix}/openapi.json` — the raw spec
+- **…and as an "API docs" page right inside the Filament panel** (embedded, so admins never leave the UI)
 
 Every API-visible integration becomes real endpoints: `POST /{slug}/chat` with a request body shaped from its **declared variables** (types + required flags) and the allow-listed `options`, plus `/{slug}/start` and `/{slug}/converse` when the integration is **conversational**. The model and prompt-caching mode appear in each endpoint's description.
 
-![Interactive API docs](screenshots/api-docs.png)
+![Interactive API docs inside Filament](screenshots/filament-api-docs.png)
 
 Gate or disable it via `config('ai-gateway.api.docs')` — add `middleware` (e.g. `['auth']`) to make it private, or override `script_src` to self-host the renderer instead of the CDN.
 
