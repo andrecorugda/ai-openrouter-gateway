@@ -6,27 +6,33 @@
 [![PHP Version](https://img.shields.io/packagist/php-v/andrecorugda/ai-openrouter-gateway.svg?style=flat-square)](https://packagist.org/packages/andrecorugda/ai-openrouter-gateway)
 [![License](https://img.shields.io/packagist/l/andrecorugda/ai-openrouter-gateway.svg?style=flat-square)](LICENSE)
 
-A self-hostable, **OpenRouter-backed AI gateway** for Laravel. One API key reaches every model — Anthropic Claude, OpenAI GPT, Google Gemini, DeepSeek, and more — behind **one service, one audit log, one cost view**.
+**Manage every AI feature in your Laravel app as a versioned, runtime-tunable integration — one OpenRouter key for every model, behind one service, one audit log, and one cost view.**
 
-Each AI use case is a **named integration** with a versioned prompt template, a declared variable schema, generation params, and guardrails. Call it from PHP (`AiGateway::invoke('my_use_case', [...])`) or over an authenticated HTTP API. A bundled **Filament admin UI** lets non-developers create and tune integrations — complete with an **AI-assisted prompt builder**.
+Stop hardcoding prompts and model ids. Define a use case once, then tune its prompt, model, and parameters from a bundled **Filament** admin UI — no code change, no redeploy. Call it from PHP or over an authenticated HTTP API, with multi-turn conversations, rate limits, daily cost caps, and per-call telemetry built in.
 
-> Your prompts, your customer data, and your OpenRouter key never leave your app. No third-party SaaS in the trust boundary.
+```php
+use Andre\AiGateway\Facades\AiGateway;
+
+$result = AiGateway::invoke('lead_summary', ['company' => 'Acme Corp']);
+
+$result->text;        // the model's reply
+$result->model_used;  // 'anthropic/claude-sonnet-4'
+$result->cost_usd;    // 0.0004
+```
+
+Swap `anthropic/claude-sonnet-4` for `openai/gpt-4o` or `google/gemini-2.5-pro` from a dropdown — every model OpenRouter offers, no code change.
+
+> Your prompts, customer data, and OpenRouter key never leave your app — there's no third-party SaaS in the trust boundary.
 
 ---
 
-## Why this exists
+## Why?
 
-AI features usually start with a prompt hardcoded in a controller and a single model id baked into the code. Then reality hits: the prompt needs tuning weekly, you want to try a cheaper model, and three different apps need the same capability. Every change becomes a code edit, a pull request, a review, and a deploy.
-
-This package moves that whole surface out of code and into a managed **integration** you tune at runtime:
-
-- **Stop hardcoding prompts.** Prompts, variables, model choice, and generation params live in the database and are edited in the admin UI — not in your source tree.
-- **Fine-tune on the fly — no PR, no redeploy.** Tweak a prompt, bump `temperature`, or swap the model and save. The next call uses it immediately. Every save mints a new **version**, so you can roll back by loading an old one into the form.
-- **Test across models in seconds.** Pick any model from the live OpenRouter catalog, hit **Test**, and compare output, tokens, latency, and cost — without touching code. Switch the production model when you find a better/cheaper one.
-- **One integration, many callers.** Define a use case once and invoke it from anywhere — any PHP service or job (`AiGateway::invoke('lead_summary', [...])`) **and** any external app, language, or codebase over **HTTPS** (`POST /api/ai/lead_summary/chat` with a scoped token). One source of truth, reused across platforms.
-- **Governance built in.** Every call is logged with tokens, cost, latency, and status; per-integration **rate limits** and **daily cost caps** stop runaway spend before it happens.
-
-In short: prompts and models become **configuration**, not code — owned by the people who tune them, observable, and callable from everything.
+- **No hardcoded prompts.** Prompt, variables, model, and params live in the database and the admin UI — not your source tree.
+- **Tune in production, instantly.** Edit and save; the next call uses it. Every save mints a new **version** you can roll back to.
+- **Test across models in seconds.** Pick any model from the live catalog, hit **Test**, and compare output, tokens, latency, and cost — then promote the better or cheaper one.
+- **One use case, every caller.** Invoke it from any PHP service *and* any external app or language over HTTPS — one source of truth, reused across platforms.
+- **Spend you can see and cap.** Per-call cost / token / latency telemetry, plus per-integration rate limits and daily budgets.
 
 ---
 
