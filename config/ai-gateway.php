@@ -148,6 +148,17 @@ return [
         'token_ability' => 'ai-gateway:invoke',
         // Only integrations with these visibilities are reachable over HTTP.
         'public_visibilities' => ['public', 'both'],
+
+        // Interactive OpenAPI docs (Scalar) built live from your integrations.
+        // GET {prefix}/docs (UI) and {prefix}/openapi.json (spec). These are
+        // unauthenticated by default so the page loads; add middleware (e.g.
+        // ['auth']) to gate them, and override the renderer's script if you
+        // want to self-host it instead of the CDN.
+        'docs' => [
+            'enabled' => (bool) env('AI_GATEWAY_API_DOCS_ENABLED', true),
+            'middleware' => [],
+            'script_src' => env('AI_GATEWAY_API_DOCS_SCRIPT', 'https://cdn.jsdelivr.net/npm/@scalar/api-reference'),
+        ],
     ],
 
     /*

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Andre\AiGateway\Http\Controllers\ConverseController;
 use Andre\AiGateway\Http\Controllers\InvokeAiIntegrationController;
+use Andre\AiGateway\Http\Controllers\OpenApiController;
 use Andre\AiGateway\Http\Controllers\StartConversationController;
 use Andre\AiGateway\Http\Middleware\EnsureApiEnabled;
 use Illuminate\Support\Facades\Route;
@@ -43,3 +44,17 @@ Route::middleware(array_merge(
     Route::post('{integration}/converse', ConverseController::class)
         ->name('ai-gateway.conversation.converse');
 });
+
+// Interactive OpenAPI docs (Scalar) + the live spec, built from the registered
+// integrations. GET routes, unauthenticated by default so the page loads;
+// calling the documented endpoints still requires a token.
+if ((bool) config('ai-gateway.api.docs.enabled', true)) {
+    Route::middleware(array_merge(
+        (array) config('ai-gateway.api.middleware', ['api']),
+        [EnsureApiEnabled::class],
+        (array) config('ai-gateway.api.docs.middleware', []),
+    ))->prefix((string) config('ai-gateway.api.prefix', 'api/ai'))->group(function () {
+        Route::get('openapi.json', [OpenApiController::class, 'spec'])->name('ai-gateway.openapi');
+        Route::get('docs', [OpenApiController::class, 'docs'])->name('ai-gateway.docs');
+    });
+}

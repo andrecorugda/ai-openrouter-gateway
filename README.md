@@ -60,6 +60,7 @@ Swap `anthropic/claude-sonnet-4` for `openai/gpt-4o` or `google/gemini-2.5-pro` 
 - 💰 **Cost limiting** — per-integration daily USD budget, enforced before each call.
 - 🌐 **HTTP API** — `POST /api/ai/{integration}/chat`, Sanctum-authenticated, toggleable at runtime.
 - 💬 **Conversation threads** — opt-in multi-turn memory with `/start` + `/converse`, per-caller ownership, TTL expiry, and a prune command.
+- 📖 **Live API docs** — an OpenAPI 3 spec + interactive Scalar "try it" page generated from your integrations.
 - 🔑 **API token management** — mint and revoke scoped tokens from the admin UI.
 - 🔎 **OpenRouter server tools** — per-version `web_search` / `web_fetch`.
 - ✨ **AI prompt builder** — describe what you want; a fast Haiku drafts the template + variables.
@@ -270,6 +271,19 @@ Threads are owned by their caller (a guessed id returns 404), expire after the T
 // routes/console.php
 Schedule::command('ai-gateway:prune-conversations')->daily();
 ```
+
+## Interactive API docs
+
+The package serves a **live OpenAPI 3 document built from your integrations**, plus an interactive **[Scalar](https://scalar.com)** docs page with a built-in request tester:
+
+- `GET {prefix}/docs` — the docs UI (paste a token, try any endpoint live)
+- `GET {prefix}/openapi.json` — the raw spec
+
+Every API-visible integration becomes real endpoints: `POST /{slug}/chat` with a request body shaped from its **declared variables** (types + required flags) and the allow-listed `options`, plus `/{slug}/start` and `/{slug}/converse` when the integration is **conversational**. The model and prompt-caching mode appear in each endpoint's description.
+
+![Interactive API docs](screenshots/api-docs.png)
+
+Gate or disable it via `config('ai-gateway.api.docs')` — add `middleware` (e.g. `['auth']`) to make it private, or override `script_src` to self-host the renderer instead of the CDN.
 
 ## Rate & cost limiting
 
