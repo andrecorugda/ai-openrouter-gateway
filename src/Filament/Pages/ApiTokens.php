@@ -189,11 +189,14 @@ class ApiTokens extends Page implements HasTable
                     ->label('Copy to clipboard')
                     ->icon('heroicon-m-clipboard-document')
                     ->button()
-                    // Client-side clipboard write; flips the label to a brief
-                    // "Copied!" confirmation. Requires a secure context (https/localhost).
+                    // The token is stashed in a data-* attribute and the handler
+                    // reads it — the x-on:click expression deliberately contains
+                    // NO HTML-special chars (no quotes, =>, &, <, >), which would
+                    // be entity-escaped in the attribute and break Alpine's parser.
+                    // Requires a secure context (https or localhost) for clipboard.
                     ->extraAttributes([
-                        'x-on:click' => 'window.navigator.clipboard?.writeText('.json_encode($plain).'); '.
-                            '$el.textContent = "Copied!"; setTimeout(() => { $el.textContent = "Copy to clipboard"; }, 2000)',
+                        'data-token' => $plain,
+                        'x-on:click' => 'navigator.clipboard?.writeText($el.dataset.token)',
                     ]),
             ])
             ->send();
