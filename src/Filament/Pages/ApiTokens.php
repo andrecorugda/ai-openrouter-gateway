@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Andre\AiGateway\Filament\Pages;
 
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -76,6 +77,12 @@ class ApiTokens extends Page implements HasTable
                 TextColumn::make('last_used_at')
                     ->dateTime()
                     ->placeholder('never'),
+                TextColumn::make('expires_at')
+                    ->label('Expires')
+                    ->dateTime()
+                    ->placeholder('never')
+                    ->color(fn ($record): ?string => $record->expires_at?->isPast() ? 'danger' : null)
+                    ->description(fn ($record): ?string => $record->expires_at?->isPast() ? 'expired' : null),
                 TextColumn::make('created_at')->dateTime()->sortable(),
             ])
             ->headerActions([
@@ -88,8 +95,20 @@ class ApiTokens extends Page implements HasTable
                             ->required()
                             ->maxLength(120)
                             ->placeholder('e.g. n8n production'),
+                        Select::make('expires_in_days')
+                            ->label('Expiration')
+                            ->options([
+                                '' => 'Never',
+                                '7' => '7 days',
+                                '30' => '30 days',
+                                '90' => '90 days',
+                                '365' => '1 year',
+                            ])
+                            ->default('')
+                            ->selectablePlaceholder(false)
+                            ->helperText('Expired tokens are rejected automatically.'),
                     ])
-                    ->action(fn (array $data) => $this->createToken($data['name'])),
+                    ->action(fn (array $data) => $this->createToken($data['name'], $data['expires_in_days'] ?? null)),
             ])
             ->actions([
                 TableAction::make('revoke')
@@ -131,7 +150,7 @@ class ApiTokens extends Page implements HasTable
         return $query;
     }
 
-    protected function createToken(string $name): void
+    protected function createToken(string $name, ?string $expiresInDays = null): void
     {
         $user = auth()->user();
 
@@ -145,12 +164,22 @@ class ApiTokens extends Page implements HasTable
             return;
         }
 
-        $newToken = $user->createToken($name, [static::ability()]);
+        // Sanctum's createToken() takes an optional expiry as its 3rd argument;
+        // the auth guard then rejects the token automatically once it passes.
+        $expiresAt = ($expiresInDays !== null && $expiresInDays !== '')
+            ? now()->addDays((int) $expiresInDays)
+            : null;
+
+        $newToken = $user->createToken($name, [static::ability()], $expiresAt);
+
+        $expiryNote = $expiresAt !== null
+            ? "\n\nExpires {$expiresAt->toDayDateTimeString()}."
+            : '';
 
         Notification::make()
             ->success()
             ->title('Token created')
-            ->body('Copy it now — it will not be shown again:'."\n\n".$newToken->plainTextToken)
+            ->body('Copy it now — it will not be shown again:'."\n\n".$newToken->plainTextToken.$expiryNote)
             ->persistent()
             ->send();
     }

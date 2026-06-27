@@ -185,10 +185,21 @@ curl -X POST https://your-app.test/api/ai/expense_extract/chat \
   -d '{"args": {"receipt_text": "..."}, "options": {"max_tokens": 256}}'
 ```
 
-Mint the token from the admin UI (**API Tokens** page) or in code:
+Mint the token from the admin UI (**API Tokens** page — with an optional expiry of 7/30/90 days or 1 year) or in code:
 
 ```php
+// never expires
 $token = $user->createToken('integration-client', ['ai-gateway:invoke'])->plainTextToken;
+
+// expires in 30 days — Sanctum rejects it automatically after that
+$token = $user->createToken('integration-client', ['ai-gateway:invoke'], now()->addDays(30))->plainTextToken;
+```
+
+Sweep expired tokens from the table on a schedule with Sanctum's built-in command:
+
+```php
+// routes/console.php
+Schedule::command('sanctum:prune-expired --hours=24')->daily();
 ```
 
 ## The admin UI (Filament)
@@ -212,7 +223,7 @@ You get:
 - **Draft with AI** — describe the use case in plain language; the prompt builder fills the template and variable schema for you.
 - **Invocations** — a read-only telemetry browser: filter by status / caller / integration / date, with cost + token Σ summaries and a per-call detail modal (usage, error, OpenRouter generation link).
 - **General settings** — toggle the HTTP API, toggle the prompt builder, and pick the helper model (also a catalog-backed Select).
-- **API Tokens** — mint and revoke scoped invocation tokens.
+- **API Tokens** — mint (with an optional expiry) and revoke scoped invocation tokens.
 
 ### Screenshots
 
