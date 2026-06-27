@@ -125,25 +125,43 @@ class OpenRouterModelCatalog
     }
 
     /**
-     * Suggested default values for this model's supported params, filling in
-     * documented defaults where the model offers none. Skips non-scalar params
-     * (e.g. tools / response_format) which aren't simple key/value inputs.
+     * Structural / non-scalar params that don't belong in a simple key/value
+     * generation-params editor (objects/arrays configured elsewhere).
+     *
+     * @var array<int,string>
+     */
+    private const NON_SCALAR_PARAMS = [
+        'tools', 'tool_choice', 'response_format', 'structured_outputs',
+        'stop', 'logit_bias', 'reasoning', 'include_reasoning', 'logprobs',
+        'top_logprobs', 'prediction', 'modalities', 'web_search_options',
+    ];
+
+    /**
+     * The full set of *tunable* params to surface for this model, so the editor
+     * shows everything the model accepts (gvnext's "show all available params").
+     * Each gets the model's own default, else a documented default, else an
+     * empty string (so the key is visible and editable). Structural params
+     * (tools / response_format / …) are excluded — not simple key/value inputs.
      *
      * @return array<string,int|float|string|bool>
      */
     public function defaultParametersFor(string $id): array
     {
         $m = $this->find($id);
-        $supported = $this->supportedParameters($id);
         $modelDefaults = is_array($m['default_parameters'] ?? null) ? $m['default_parameters'] : [];
 
         $out = [];
-        foreach ($supported as $param) {
+        foreach ($this->supportedParameters($id) as $param) {
+            if (in_array($param, self::NON_SCALAR_PARAMS, true)) {
+                continue;
+            }
             $v = $modelDefaults[$param] ?? null;
             if ($v !== null && is_scalar($v)) {
                 $out[$param] = $v;
             } elseif (array_key_exists($param, self::DOCUMENTED_DEFAULTS)) {
                 $out[$param] = self::DOCUMENTED_DEFAULTS[$param];
+            } else {
+                $out[$param] = '';
             }
         }
 

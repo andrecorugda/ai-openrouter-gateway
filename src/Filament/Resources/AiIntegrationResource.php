@@ -147,51 +147,19 @@ class AiIntegrationResource extends Resource
                 ])
                 ->columns(1),
 
-            // (c) Variables ---------------------------------------------------
-            // Declared first so the prompt composer below can offer them as
-            // click-to-insert buttons.
-            Forms\Components\Section::make('Variables')
-                ->description('Declares the runtime inputs the prompt expects. Each must match a {{placeholder}}.')
-                ->collapsible()
-                ->schema([
-                    Forms\Components\Repeater::make('prompt_args')
-                        ->label('Prompt variables')
-                        ->live()
-                        ->schema([
-                            Forms\Components\TextInput::make('name')
-                                ->required()
-                                ->regex('/^[a-z][a-z0-9_]*$/')
-                                ->maxLength(32)
-                                ->helperText('snake_case, max 32 chars.'),
-                            Forms\Components\Select::make('type')
-                                ->options(static::argTypeOptions())
-                                ->default('string')
-                                ->required(),
-                            Forms\Components\Toggle::make('required')
-                                ->default(true)
-                                ->inline(false),
-                            Forms\Components\TextInput::make('default')
-                                ->label('Default')
-                                ->maxLength(255),
-                            Forms\Components\TextInput::make('description')
-                                ->maxLength(255),
-                        ])
-                        ->columns(5)
-                        ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
-                        ->addActionLabel('Add variable')
-                        ->collapsible()
-                        ->defaultItems(0)
-                        ->helperText('Declare variables, then click them in the prompt editor to insert {{name}}.')
-                        ->columnSpanFull(),
-                ]),
-
-            // (d) Prompt ------------------------------------------------------
+            // (c) Prompt + variables -----------------------------------------
+            // Variables are declared via a modal ("Manage variables"); the
+            // prompt composer's side panel lists them for click-to-insert.
             Forms\Components\Section::make('System prompt')
                 ->description('The template rendered before each call. Use {{snake_case}} placeholders for runtime variables.')
                 ->headerActions([
+                    static::manageVariablesAction(),
                     static::draftWithAiAction(),
                 ])
                 ->schema([
+                    // Holds the declared variables in form state (edited via the
+                    // "Manage variables" modal, read by the composer's panel).
+                    Forms\Components\Hidden::make('prompt_args'),
                     PromptComposer::make('system_prompt')
                         ->variables(fn (Get $get): array => collect($get('prompt_args') ?? [])
                             ->pluck('name')
@@ -384,6 +352,54 @@ class AiIntegrationResource extends Resource
     // -------------------------------------------------------------------------
     // Shared actions
     // -------------------------------------------------------------------------
+
+    /**
+     * "Manage variables" — a form header action that edits the declared
+     * `prompt_args` in a modal (kept out of the main layout since the prompt
+     * composer's side panel already lists them for click-to-insert).
+     */
+    public static function manageVariablesAction(): Forms\Components\Actions\Action
+    {
+        return Forms\Components\Actions\Action::make('manageVariables')
+            ->label('Manage variables')
+            ->icon('heroicon-m-variable')
+            ->modalHeading('Declare variables')
+            ->modalWidth('4xl')
+            ->modalSubmitActionLabel('Done')
+            ->fillForm(fn (Get $get): array => ['prompt_args' => $get('prompt_args') ?? []])
+            ->form([
+                Forms\Components\Repeater::make('prompt_args')
+                    ->label('Prompt variables')
+                    ->schema([
+                        Forms\Components\TextInput::make('name')
+                            ->required()
+                            ->regex('/^[a-z][a-z0-9_]*$/')
+                            ->maxLength(32)
+                            ->helperText('snake_case, max 32 chars.'),
+                        Forms\Components\Select::make('type')
+                            ->options(static::argTypeOptions())
+                            ->default('string')
+                            ->required(),
+                        Forms\Components\Toggle::make('required')
+                            ->default(true)
+                            ->inline(false),
+                        Forms\Components\TextInput::make('default')
+                            ->label('Default')
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('description')
+                            ->maxLength(255),
+                    ])
+                    ->columns(5)
+                    ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                    ->addActionLabel('Add variable')
+                    ->collapsible()
+                    ->defaultItems(0)
+                    ->columnSpanFull(),
+            ])
+            ->action(function (array $data, Set $set): void {
+                $set('prompt_args', array_values($data['prompt_args'] ?? []));
+            });
+    }
 
     /**
      * "Draft with AI" — a form header action on the system-prompt section.
@@ -603,7 +619,7 @@ class AiIntegrationResource extends Resource
                         ))
                         ->badge()
                         ->color($version->is_active ? 'success' : 'gray')
-                        ->suffixAction(
+                        ->suffixActions(array_values(array_filter([
                             $version->is_active
                                 ? null
                                 : Action::make('activate_'.$version->id)
@@ -618,7 +634,7 @@ class AiIntegrationResource extends Resource
                                             ->title('Version v'.$version->version_number.' activated')
                                             ->send();
                                     }),
-                        );
+                        ])));
                 }
 
                 return $entries;

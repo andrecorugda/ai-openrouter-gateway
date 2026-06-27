@@ -6,8 +6,11 @@ namespace Andre\AiGateway\Filament\Resources\AiIntegrationResource\Pages;
 
 use Andre\AiGateway\Filament\Resources\AiIntegrationResource;
 use Andre\AiGateway\Models\AiIntegration;
+use Andre\AiGateway\Models\AiIntegrationVersion;
 use Andre\AiGateway\Services\AiIntegrationService;
 use Filament\Actions;
+use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 
@@ -30,8 +33,84 @@ class EditAiIntegration extends EditRecord
                 ->modalSubmitActionLabel('Run')
                 ->form(fn (): array => AiIntegrationResource::testFormSchema($this->getRecord()))
                 ->action(fn (array $data) => AiIntegrationResource::runTest($this->getRecord(), $data)),
+
+            // Versions: pick a past version and load its editable surface into
+            // the form (optionally activating it). Saving then mints it as the
+            // new active version (rollback-by-clone).
+            Actions\Action::make('versions')
+                ->label('Versions')
+                ->icon('heroicon-m-clock')
+                ->color('gray')
+                ->modalHeading('Versions')
+                ->modalSubmitActionLabel('Load into form')
+                ->fillForm(fn (): array => ['version_id' => $this->getRecord()->activeVersion?->id])
+                ->form([
+                    Forms\Components\Select::make('version_id')
+                        ->label('Version')
+                        ->native(false)
+                        ->required()
+                        ->options(fn (): array => $this->getRecord()->versions
+                            ->mapWithKeys(fn ($v): array => [$v->id => sprintf(
+                                'v%d — %s%s',
+                                $v->version_number,
+                                $v->created_at?->toDayDateTimeString() ?? 'unknown date',
+                                $v->is_active ? '  (active)' : '',
+                            )])
+                            ->all()),
+                    Forms\Components\Toggle::make('activate')
+                        ->label('Also activate this version now')
+                        ->helperText('Otherwise it just loads into the form; Save mints a new active version.')
+                        ->default(false),
+                ])
+                ->action(function (array $data): void {
+                    $version = $this->getRecord()->versions()->find($data['version_id'] ?? null);
+                    if ($version === null) {
+                        Notification::make()->danger()->title('Version not found')->send();
+
+                        return;
+                    }
+
+                    $this->loadVersionIntoForm($version);
+
+                    if (! empty($data['activate'])) {
+                        app(AiIntegrationService::class)->activate($version);
+                        Notification::make()->success()
+                            ->title('Activated v'.$version->version_number)
+                            ->body('Loaded into the form as the active version.')
+                            ->send();
+                    } else {
+                        Notification::make()->success()
+                            ->title('Loaded v'.$version->version_number.' into the form')
+                            ->body('Save to mint it as the new active version.')
+                            ->send();
+                    }
+                }),
+
             Actions\DeleteAction::make(),
         ];
+    }
+
+    /**
+     * Fill the edit form with a specific version's editable surface, preserving
+     * the registry fields already in the form.
+     */
+    protected function loadVersionIntoForm(AiIntegrationVersion $version): void
+    {
+        $models = is_array($version->models) ? array_values($version->models) : [];
+
+        $state = $this->data ?? [];
+        $state['primary_model'] = $models[0] ?? null;
+        $state['fallback_models'] = array_slice($models, 1);
+        $state['system_prompt'] = (string) ($version->system_prompt ?? '');
+        $state['system_prompt_cacheable'] = (bool) $version->system_prompt_cacheable;
+        $state['default_params'] = is_array($version->default_params) ? $version->default_params : [];
+        $state['prompt_args'] = is_array($version->prompt_args) ? $version->prompt_args : [];
+        $state = array_merge(
+            $state,
+            AiIntegrationResource::flattenServerTools(is_array($version->server_tools) ? $version->server_tools : null),
+        );
+
+        $this->form->fill($state);
     }
 
     /**

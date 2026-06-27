@@ -448,7 +448,9 @@ class AiGateway
         }
 
         $merged = array_merge($defaults, $callerOpts);
-        $merged = array_filter($merged, static fn ($v) => $v !== null);
+        // Drop unset params — null or empty string (the params editor may seed a
+        // model's tunable keys with blank values the admin never filled in).
+        $merged = array_filter($merged, static fn ($v) => $v !== null && $v !== '');
         $merged = $this->parseJsonStrings($merged);
 
         $serverTools = $this->buildServerTools($version);
