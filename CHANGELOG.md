@@ -5,6 +5,11 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-06-27
+
+### Added
+- The one-time token notification now has a **Copy to clipboard** button (one click, with a brief "Copied!" confirmation). Requires a secure context (https or localhost).
+
 ## [1.2.0] - 2026-06-27
 
 ### Added

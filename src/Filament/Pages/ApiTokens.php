@@ -7,6 +7,7 @@ namespace Andre\AiGateway\Filament\Pages;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Actions\Action as NotificationAction;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables\Actions\Action as TableAction;
@@ -176,11 +177,25 @@ class ApiTokens extends Page implements HasTable
             ? "\n\nExpires {$expiresAt->toDayDateTimeString()}."
             : '';
 
+        $plain = $newToken->plainTextToken;
+
         Notification::make()
             ->success()
-            ->title('Token created')
-            ->body('Copy it now — it will not be shown again:'."\n\n".$newToken->plainTextToken.$expiryNote)
+            ->title('Token created — shown once')
+            ->body('Copy it now; it will not be shown again:'."\n\n".$plain.$expiryNote)
             ->persistent()
+            ->actions([
+                NotificationAction::make('copy')
+                    ->label('Copy to clipboard')
+                    ->icon('heroicon-m-clipboard-document')
+                    ->button()
+                    // Client-side clipboard write; flips the label to a brief
+                    // "Copied!" confirmation. Requires a secure context (https/localhost).
+                    ->extraAttributes([
+                        'x-on:click' => 'window.navigator.clipboard?.writeText('.json_encode($plain).'); '.
+                            '$el.textContent = "Copied!"; setTimeout(() => { $el.textContent = "Copy to clipboard"; }, 2000)',
+                    ]),
+            ])
             ->send();
     }
 

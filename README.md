@@ -223,7 +223,7 @@ You get:
 - **Draft with AI** — describe the use case in plain language; the prompt builder fills the template and variable schema for you.
 - **Invocations** — a read-only telemetry browser: filter by status / caller / integration / date, with cost + token Σ summaries and a per-call detail modal (usage, error, OpenRouter generation link).
 - **General settings** — toggle the HTTP API, toggle the prompt builder, and pick the helper model (also a catalog-backed Select).
-- **API Tokens** — mint (with an optional expiry) and revoke scoped invocation tokens.
+- **API Tokens** — mint (with an optional expiry) and revoke scoped invocation tokens; the one-time token has a one-click **Copy to clipboard** button.
 
 ### Screenshots
 
