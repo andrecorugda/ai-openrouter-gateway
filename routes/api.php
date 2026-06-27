@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Andre\AiGateway\Http\Controllers\InvokeAiIntegrationController;
 use Andre\AiGateway\Http\Middleware\EnsureApiEnabled;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +27,10 @@ Route::middleware(array_merge(
     (array) config('ai-gateway.api.middleware', ['api']),
     [EnsureApiEnabled::class],
     (array) config('ai-gateway.api.auth_middleware', ['auth:sanctum']),
-    ["abilities:{$ability}"],
+    // Reference Sanctum's middleware class directly rather than the `abilities`
+    // alias — the alias is only registered if the host app declares it, but the
+    // class resolves everywhere (and under Testbench).
+    [CheckAbilities::class.':'.$ability],
 ))->prefix((string) config('ai-gateway.api.prefix', 'api/ai'))->group(function () {
     Route::post('{integration}/chat', InvokeAiIntegrationController::class)
         ->name('ai-gateway.invoke');
