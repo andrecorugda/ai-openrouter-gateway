@@ -5,6 +5,15 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-06-27
+
+### Fixed
+- **Filament General Settings** page: replace the Resource-only `getCachedFormActions()` call in the view with a plain submit button (was 500ing on a plain Page).
+- **Filament API Tokens** page: `sanctumReady()` now returns `hasTable()`'s result instead of always `true`, so it degrades gracefully (and the create action already guards a non-token `User`).
+
+### Docs
+- README: document the Sanctum prerequisite (install/migrate + `HasApiTokens` on `User`) for the HTTP API and API Tokens page.
+
 ## [0.1.2] - 2026-06-27
 
 ### Fixed

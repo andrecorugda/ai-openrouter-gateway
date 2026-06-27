@@ -115,6 +115,28 @@ $result = AiGateway::invoke('support_assistant',
 
 ### 3. Or call it over HTTP
 
+The HTTP API and the **API Tokens** admin page are authenticated with
+[Laravel Sanctum](https://laravel.com/docs/sanctum). One-time setup in your app:
+
+```bash
+composer require laravel/sanctum
+php artisan migrate            # creates personal_access_tokens
+```
+
+Then add the `HasApiTokens` trait to your `User` model:
+
+```php
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens;
+    // ...
+}
+```
+
+Now call the endpoint:
+
 ```bash
 curl -X POST https://your-app.test/api/ai/expense_extract/chat \
   -H "Authorization: Bearer <token>" \

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Andre\AiGateway\Filament\Pages;
 
 use Andre\AiGateway\Support\Settings;
-use Filament\Actions\Action;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -93,14 +92,5 @@ class GeneralSettings extends Page implements HasForms
             ->success()
             ->title('Settings saved')
             ->send();
-    }
-
-    protected function getFormActions(): array
-    {
-        return [
-            Action::make('save')
-                ->label('Save')
-                ->submit('save'),
-        ];
     }
 }

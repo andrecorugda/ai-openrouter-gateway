@@ -54,11 +54,11 @@ class ApiTokens extends Page implements HasTable
     protected function sanctumReady(): bool
     {
         try {
-            (new PersonalAccessToken)->getConnection()
+            // hasTable() returns false (it does NOT throw) when the table is
+            // missing, so we must return its result — not just "didn't throw".
+            return (new PersonalAccessToken)->getConnection()
                 ->getSchemaBuilder()
                 ->hasTable((new PersonalAccessToken)->getTable());
-
-            return true;
         } catch (Throwable) {
             return false;
         }
