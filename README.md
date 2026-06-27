@@ -74,7 +74,16 @@ Swap `anthropic/claude-sonnet-4` for `openai/gpt-4o` or `google/gemini-2.5-pro` 
 - PHP 8.2+
 - Laravel 11, 12, or 13
 - An [OpenRouter](https://openrouter.ai) API key
-- Filament 3.2+ *(optional — only for the admin UI; use a Filament release that supports your Laravel version)*
+- **Filament 4 or 5** for the admin UI *(optional)* — see version compatibility below
+
+## Version compatibility
+
+| Package | Filament |
+|---|---|
+| `^2.0` | **4.x / 5.x** |
+| `^1.0` | **3.x** |
+
+Composer installs the right line for your Filament version automatically — `composer require andrecorugda/ai-openrouter-gateway`.
 
 ## Installation
 
@@ -231,12 +240,13 @@ You get:
 
 | | |
 |---|---|
-| **Integration form** — catalog model picker, per-model params, caching, prompt editor | ![Create integration](screenshots/integration-create.png) |
+| **Integration form** — catalog model picker, per-model params, caching, prompt editor | ![Create integration](screenshots/integration-edit.png) |
 | **Integrations list** | ![Integrations](screenshots/integrations-list.png) |
 | **Invocations** — telemetry with Σ summaries | ![Invocations](screenshots/invocations.png) |
+| **Invocation detail** — per-call tokens, cost, latency, OpenRouter id | ![Invocation detail](screenshots/invocation-detail.png) |
 | **Versions** — load a past version into the form | ![Versions](screenshots/modal-versions.png) |
 | **General settings** | ![General settings](screenshots/general-settings.png) |
-| **API tokens** | ![API tokens](screenshots/api-tokens.png) |
+| **API tokens** — mint scoped tokens; one-time value with one-click copy | ![API tokens](screenshots/api-tokens-created.png) |
 
 ## Conversations (multi-turn threads)
 
