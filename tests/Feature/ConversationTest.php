@@ -9,7 +9,7 @@ use Andre\AiGateway\Services\AiGateway;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
-function fakeOpenRouter(): void
+function fakeConversationHttp(): void
 {
     Http::fake([
         '*/chat/completions' => Http::response([
@@ -30,7 +30,7 @@ function conversationalIntegration(): AiIntegration
 }
 
 it('starts a thread, persists both turns, and continues it by id', function () {
-    fakeOpenRouter();
+    fakeConversationHttp();
     $integration = conversationalIntegration();
     $gateway = app(AiGateway::class);
 
@@ -51,7 +51,7 @@ it('starts a thread, persists both turns, and continues it by id', function () {
 });
 
 it('replays prior turns as history on the next call', function () {
-    fakeOpenRouter();
+    fakeConversationHttp();
     $integration = conversationalIntegration();
     $gateway = app(AiGateway::class);
 
@@ -69,7 +69,7 @@ it('replays prior turns as history on the next call', function () {
 });
 
 it('rejects an unknown or non-owned conversation id', function () {
-    fakeOpenRouter();
+    fakeConversationHttp();
     $integration = conversationalIntegration();
 
     app(AiGateway::class)->converse($integration->slug, (string) Str::uuid(), 'hi', ['question' => 'hi']);
