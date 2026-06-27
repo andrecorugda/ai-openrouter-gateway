@@ -12,6 +12,22 @@ Each AI use case is a **named integration** with a versioned prompt template, a 
 
 ---
 
+## Why this exists
+
+AI features usually start with a prompt hardcoded in a controller and a single model id baked into the code. Then reality hits: the prompt needs tuning weekly, you want to try a cheaper model, and three different apps need the same capability. Every change becomes a code edit, a pull request, a review, and a deploy.
+
+This package moves that whole surface out of code and into a managed **integration** you tune at runtime:
+
+- **Stop hardcoding prompts.** Prompts, variables, model choice, and generation params live in the database and are edited in the admin UI — not in your source tree.
+- **Fine-tune on the fly — no PR, no redeploy.** Tweak a prompt, bump `temperature`, or swap the model and save. The next call uses it immediately. Every save mints a new **version**, so you can roll back by loading an old one into the form.
+- **Test across models in seconds.** Pick any model from the live OpenRouter catalog, hit **Test**, and compare output, tokens, latency, and cost — without touching code. Switch the production model when you find a better/cheaper one.
+- **One integration, many callers.** Define a use case once and invoke it from anywhere — any PHP service or job (`AiGateway::invoke('lead_summary', [...])`) **and** any external app, language, or codebase over **HTTPS** (`POST /api/ai/lead_summary/chat` with a scoped token). One source of truth, reused across platforms.
+- **Governance built in.** Every call is logged with tokens, cost, latency, and status; per-integration **rate limits** and **daily cost caps** stop runaway spend before it happens.
+
+In short: prompts and models become **configuration**, not code — owned by the people who tune them, observable, and callable from everything.
+
+---
+
 ## Features
 
 - 🔌 **One key, every model** — OpenRouter under the hood; switch models per-integration with no code change.
@@ -248,7 +264,7 @@ The gateway never sends data to anyone but OpenRouter. Rotate your key by updati
 
 ## Credits
 
-Built by [Andre Corugda](https://github.com/andrecorugda). Extracted and generalized from the GlobalView Next AI Gateway.
+Built by [Andre Corugda](https://github.com/andrecorugda).
 
 ## License
 
