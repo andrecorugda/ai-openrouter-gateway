@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Services;
 
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -227,7 +228,7 @@ class OpenRouterModelCatalog
         return $models;
     }
 
-    private function cache(): \Illuminate\Contracts\Cache\Repository
+    private function cache(): Repository
     {
         $store = config('ai-gateway.cache.store');
 
