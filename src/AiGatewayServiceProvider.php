@@ -8,6 +8,7 @@ use Andre\AiGateway\Services\AiGateway;
 use Andre\AiGateway\Services\AiIntegrationResolver;
 use Andre\AiGateway\Services\AiIntegrationService;
 use Andre\AiGateway\Services\OpenRouterClient;
+use Andre\AiGateway\Services\OpenRouterModelCatalog;
 use Andre\AiGateway\Services\PromptBuilderService;
 use Andre\AiGateway\Services\PromptRenderer;
 use Andre\AiGateway\Services\UsageGuard;
@@ -39,6 +40,7 @@ class AiGatewayServiceProvider extends PackageServiceProvider
         $this->app->singleton(OpenRouterClient::class);
         $this->app->singleton(PromptRenderer::class);
         $this->app->singleton(AiIntegrationResolver::class);
+        $this->app->singleton(OpenRouterModelCatalog::class);
         $this->app->singleton(UsageGuard::class);
         $this->app->singleton(AiIntegrationService::class);
         $this->app->singleton(PromptBuilderService::class);

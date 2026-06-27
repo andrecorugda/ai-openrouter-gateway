@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament\Pages;
 
+use Andre\AiGateway\Services\OpenRouterModelCatalog;
 use Andre\AiGateway\Support\Settings;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -71,10 +72,22 @@ class GeneralSettings extends Page implements HasForms
                         Toggle::make('prompt_builder_enabled')
                             ->label('Enable AI prompt builder')
                             ->helperText('Shows the "Draft with AI" helper on integration prompts.'),
-                        TextInput::make('prompt_builder_model')
+                        Select::make('prompt_builder_model')
                             ->label('Prompt builder model')
-                            ->helperText('OpenRouter slug, e.g. anthropic/claude-haiku-4.5')
-                            ->default(Settings::string('prompt_builder_model')),
+                            ->options(function (): array {
+                                $options = app(OpenRouterModelCatalog::class)->options();
+
+                                // Keep the currently-saved model selectable even
+                                // if it's absent from the live catalog.
+                                $saved = (string) Settings::string('prompt_builder_model');
+                                if ($saved !== '' && ! array_key_exists($saved, $options)) {
+                                    $options[$saved] = $saved;
+                                }
+
+                                return $options;
+                            })
+                            ->searchable()
+                            ->helperText('OpenRouter model used by the "Draft with AI" prompt builder.'),
                     ]),
             ])
             ->statePath('data');

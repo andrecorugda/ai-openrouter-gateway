@@ -5,6 +5,19 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-27
+
+### Added
+- **OpenRouter model catalog** (`OpenRouterModelCatalog`): live `GET /models`, cached (`models_catalog.ttl_seconds`, 1h), exposing per-model `supported_parameters`, suggested defaults, and prompt-caching mode.
+- **Interactive prompt editor** (`PromptComposer` field): textarea + a toggleable variables side-panel that inserts `{{name}}` at the cursor on click.
+
+### Changed
+- Model selection is now a **searchable Select from the live catalog** (primary + fallbacks) instead of free text.
+- **Generation params auto-seed** from the selected model's supported parameters (existing values preserved).
+- **Prompt-caching toggle** shows only for cache-eligible (explicit) models; an "auto-cached" note shows for providers that cache automatically; hidden otherwise.
+- **General Settings** `prompt_builder_model` is now a catalog-backed Select.
+- Removed the editable **provider** field — always `openrouter`.
+
 ## [0.1.4] - 2026-06-27
 
 ### Fixed

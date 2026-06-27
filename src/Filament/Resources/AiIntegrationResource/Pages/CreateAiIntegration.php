@@ -23,6 +23,9 @@ class CreateAiIntegration extends CreateRecord
     protected function handleRecordCreation(array $data): Model
     {
         $registry = AiIntegrationResource::onlyRegistryAttributes($data);
+        // Provider is a registry column but no longer an editable form field;
+        // every integration routes through OpenRouter.
+        $registry['provider'] = 'openrouter';
         $registry['created_by'] = auth()->id();
 
         /** @var class-string<AiIntegration> $modelClass */

@@ -49,7 +49,13 @@ class EditAiIntegration extends EditRecord
 
         $data['system_prompt'] = $version?->system_prompt ?? '';
         $data['system_prompt_cacheable'] = (bool) ($version?->system_prompt_cacheable ?? true);
-        $data['models'] = is_array($version?->models) ? $version->models : [];
+
+        // Split the stored ordered models list back into the two form-only
+        // Selects: primary (index 0) + fallbacks (the rest).
+        $models = is_array($version?->models) ? array_values($version->models) : [];
+        $data['primary_model'] = $models[0] ?? null;
+        $data['fallback_models'] = array_slice($models, 1);
+
         $data['default_params'] = is_array($version?->default_params) ? $version->default_params : [];
         $data['prompt_args'] = is_array($version?->prompt_args) ? $version->prompt_args : [];
 

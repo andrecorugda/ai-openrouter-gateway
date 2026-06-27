@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament\Resources;
 
+use Andre\AiGateway\Filament\Forms\Components\PromptComposer;
 use Andre\AiGateway\Filament\Resources\AiIntegrationResource\Pages;
 use Andre\AiGateway\Models\AiIntegration;
 use Andre\AiGateway\Models\AiIntegrationVersion;
 use Andre\AiGateway\Services\AiGateway;
 use Andre\AiGateway\Services\AiIntegrationService;
+use Andre\AiGateway\Services\OpenRouterModelCatalog;
 use Andre\AiGateway\Services\PromptBuilderService;
 use Andre\AiGateway\Services\PromptRenderer;
 use Filament\Forms;
@@ -91,48 +93,70 @@ class AiIntegrationResource extends Resource
                         ->rows(2)
                         ->maxLength(1000)
                         ->columnSpanFull(),
-                    Forms\Components\TextInput::make('provider')
-                        ->default('openrouter')
-                        ->required()
-                        ->maxLength(60)
-                        ->helperText('Routing provider label recorded on telemetry. Usually "openrouter".'),
                 ])
                 ->columns(2),
 
             // (b) Models ------------------------------------------------------
             Forms\Components\Section::make('Models')
-                ->description('OpenRouter model slugs. The first is primary; the rest are fallbacks in order.')
+                ->description('Pick from the live OpenRouter catalog. The primary is tried first; fallbacks follow in order.')
                 ->schema([
-                    Forms\Components\TagsInput::make('models')
+                    Forms\Components\Select::make('primary_model')
+                        ->label('Primary model')
+                        ->options(fn (): array => app(OpenRouterModelCatalog::class)->options())
+                        ->searchable()
                         ->required()
-                        ->placeholder('anthropic/claude-sonnet-4')
-                        ->default([(string) config('ai-gateway.default_model', 'anthropic/claude-sonnet-4')])
-                        ->helperText('Primary model first. Press enter to add each slug.')
-                        ->columnSpanFull(),
-                ]),
+                        ->live()
+                        ->default((string) config('ai-gateway.default_model', 'anthropic/claude-sonnet-4'))
+                        ->helperText(function (Get $get): ?string {
+                            $id = (string) ($get('primary_model') ?? '');
+                            if ($id === '') {
+                                return null;
+                            }
+                            $model = app(OpenRouterModelCatalog::class)->find($id);
+                            if ($model === null) {
+                                return null;
+                            }
 
-            // (c) Prompt ------------------------------------------------------
-            Forms\Components\Section::make('System prompt')
-                ->description('The template rendered before each call. Use {{snake_case}} placeholders for runtime variables.')
-                ->headerActions([
-                    static::draftWithAiAction(),
+                            return static::modelMetaSummary($model);
+                        })
+                        ->afterStateUpdated(function ($state, Get $get, Set $set): void {
+                            // Seed the generation params with this model's supported
+                            // params WITHOUT overwriting any keys the admin already set.
+                            $id = (string) ($state ?? '');
+                            if ($id === '') {
+                                return;
+                            }
+                            $current = is_array($get('default_params')) ? $get('default_params') : [];
+                            $suggested = app(OpenRouterModelCatalog::class)->defaultParametersFor($id);
+
+                            $merged = $current;
+                            foreach ($suggested as $param => $value) {
+                                if (! array_key_exists($param, $merged)) {
+                                    $merged[$param] = (string) $value;
+                                }
+                            }
+
+                            $set('default_params', $merged);
+                        }),
+                    Forms\Components\Select::make('fallback_models')
+                        ->label('Fallback models')
+                        ->options(fn (): array => app(OpenRouterModelCatalog::class)->options())
+                        ->multiple()
+                        ->searchable()
+                        ->helperText('Tried in order if the primary is unavailable.'),
                 ])
-                ->schema([
-                    Forms\Components\Textarea::make('system_prompt')
-                        ->rows(10)
-                        ->columnSpanFull()
-                        ->helperText('Placeholders like {{company_name}} are filled from the Variables below.'),
-                    Forms\Components\Toggle::make('system_prompt_cacheable')
-                        ->default(true)
-                        ->helperText('Send the system prompt with a cache_control marker so providers can cache it.'),
-                ]),
+                ->columns(1),
 
-            // (d) Variables ---------------------------------------------------
+            // (c) Variables ---------------------------------------------------
+            // Declared first so the prompt composer below can offer them as
+            // click-to-insert buttons.
             Forms\Components\Section::make('Variables')
                 ->description('Declares the runtime inputs the prompt expects. Each must match a {{placeholder}}.')
+                ->collapsible()
                 ->schema([
                     Forms\Components\Repeater::make('prompt_args')
                         ->label('Prompt variables')
+                        ->live()
                         ->schema([
                             Forms\Components\TextInput::make('name')
                                 ->required()
@@ -146,15 +170,47 @@ class AiIntegrationResource extends Resource
                             Forms\Components\Toggle::make('required')
                                 ->default(true)
                                 ->inline(false),
+                            Forms\Components\TextInput::make('default')
+                                ->label('Default')
+                                ->maxLength(255),
                             Forms\Components\TextInput::make('description')
                                 ->maxLength(255),
                         ])
-                        ->columns(4)
+                        ->columns(5)
                         ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
                         ->addActionLabel('Add variable')
                         ->collapsible()
                         ->defaultItems(0)
+                        ->helperText('Declare variables, then click them in the prompt editor to insert {{name}}.')
                         ->columnSpanFull(),
+                ]),
+
+            // (d) Prompt ------------------------------------------------------
+            Forms\Components\Section::make('System prompt')
+                ->description('The template rendered before each call. Use {{snake_case}} placeholders for runtime variables.')
+                ->headerActions([
+                    static::draftWithAiAction(),
+                ])
+                ->schema([
+                    PromptComposer::make('system_prompt')
+                        ->variables(fn (Get $get): array => collect($get('prompt_args') ?? [])
+                            ->pluck('name')
+                            ->filter()
+                            ->values()
+                            ->all())
+                        ->required()
+                        ->columnSpanFull()
+                        ->helperText('Placeholders like {{company_name}} are filled from the Variables above.'),
+                    Forms\Components\Toggle::make('system_prompt_cacheable')
+                        ->default(true)
+                        ->helperText('Send the system prompt with a cache_control marker so this provider can cache it.')
+                        ->visible(fn (Get $get): bool => app(OpenRouterModelCatalog::class)
+                            ->cachingMode((string) ($get('primary_model') ?? '')) === 'explicit'),
+                    Forms\Components\Placeholder::make('caching_auto')
+                        ->label('Prompt caching')
+                        ->content('Cached automatically by this provider.')
+                        ->visible(fn (Get $get): bool => app(OpenRouterModelCatalog::class)
+                            ->cachingMode((string) ($get('primary_model') ?? '')) === 'automatic'),
                 ]),
 
             // (e) Generation params ------------------------------------------
@@ -165,7 +221,18 @@ class AiIntegrationResource extends Resource
                         ->keyLabel('param')
                         ->valueLabel('value')
                         ->reorderable()
-                        ->helperText('e.g. max_tokens = 1024, temperature = 0.7, top_p = 0.9')
+                        ->helperText(function (Get $get): string {
+                            $id = (string) ($get('primary_model') ?? '');
+                            $base = 'e.g. max_tokens = 1024, temperature = 0.7, top_p = 0.9';
+                            if ($id === '') {
+                                return $base;
+                            }
+                            $count = count(app(OpenRouterModelCatalog::class)->supportedParameters($id));
+
+                            return $count > 0
+                                ? "This model supports {$count} params. ".$base
+                                : $base;
+                        })
                         ->columnSpanFull(),
                 ]),
 
@@ -587,11 +654,64 @@ class AiIntegrationResource extends Resource
         return [
             'system_prompt' => (string) ($data['system_prompt'] ?? ''),
             'system_prompt_cacheable' => (bool) ($data['system_prompt_cacheable'] ?? true),
-            'models' => array_values($data['models'] ?? []),
+            'models' => static::assembleModels($data),
             'default_params' => static::normalizeParams($data['default_params'] ?? null),
             'prompt_args' => array_values($data['prompt_args'] ?? []),
             'server_tools' => static::assembleServerTools($data),
         ];
+    }
+
+    /**
+     * Build the version's ordered `models` list from the two form-only Selects:
+     * primary first, then fallbacks, de-duped while preserving order.
+     *
+     * @param  array<string,mixed>  $data
+     * @return array<int,string>
+     */
+    public static function assembleModels(array $data): array
+    {
+        $primary = $data['primary_model'] ?? null;
+        $fallbacks = is_array($data['fallback_models'] ?? null) ? $data['fallback_models'] : [];
+
+        $ordered = [];
+        if (is_string($primary) && $primary !== '') {
+            $ordered[] = $primary;
+        }
+        foreach ($fallbacks as $model) {
+            if (is_string($model) && $model !== '') {
+                $ordered[] = $model;
+            }
+        }
+
+        return array_values(array_unique($ordered));
+    }
+
+    /**
+     * Human-readable context-length + pricing summary for a catalog model row,
+     * used as the primary-model select's helper text.
+     *
+     * @param  array<string,mixed>  $model
+     */
+    public static function modelMetaSummary(array $model): string
+    {
+        $parts = [];
+
+        $context = $model['context_length'] ?? null;
+        if (is_int($context) && $context > 0) {
+            $parts[] = 'Context: '.number_format($context).' tokens';
+        }
+
+        $pricing = is_array($model['pricing'] ?? null) ? $model['pricing'] : [];
+        $prompt = $pricing['prompt'] ?? null;
+        $completion = $pricing['completion'] ?? null;
+        if (is_numeric($prompt) && is_numeric($completion)) {
+            // OpenRouter prices are per-token USD; show per-million for readability.
+            $in = number_format(((float) $prompt) * 1_000_000, 2);
+            $out = number_format(((float) $completion) * 1_000_000, 2);
+            $parts[] = "Pricing: \${$in}/M in, \${$out}/M out";
+        }
+
+        return $parts === [] ? 'No catalog metadata available.' : implode('  •  ', $parts);
     }
 
     /**

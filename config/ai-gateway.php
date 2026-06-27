@@ -89,6 +89,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | OpenRouter model catalog
+    |--------------------------------------------------------------------------
+    |
+    | The admin UI fetches the live model list (GET /models) to power the model
+    | picker, per-model generation params, and prompt-caching eligibility.
+    | Cached on the same store for this TTL.
+    |
+    */
+
+    'models_catalog' => [
+        'ttl_seconds' => (int) env('AI_GATEWAY_MODELS_CATALOG_TTL', 3600),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | HTTP API
     |--------------------------------------------------------------------------
     |
