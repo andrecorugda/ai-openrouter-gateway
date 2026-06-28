@@ -1,5 +1,9 @@
 # AI OpenRouter Gateway for Laravel
 
+<p align="center">
+  <img src="art/cover.jpg" alt="AI OpenRouter Gateway — one OpenRouter key for every model, managed in Filament" width="100%">
+</p>
+
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/andrecorugda/ai-openrouter-gateway.svg?style=flat-square)](https://packagist.org/packages/andrecorugda/ai-openrouter-gateway)
 [![Total Downloads](https://img.shields.io/packagist/dt/andrecorugda/ai-openrouter-gateway.svg?style=flat-square)](https://packagist.org/packages/andrecorugda/ai-openrouter-gateway)
 [![Tests](https://img.shields.io/github/actions/workflow/status/andrecorugda/ai-openrouter-gateway/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/andrecorugda/ai-openrouter-gateway/actions)
