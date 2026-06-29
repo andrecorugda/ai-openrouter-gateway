@@ -382,6 +382,13 @@ class AiIntegrationResource extends Resource
             ]);
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            AiIntegrationResource\RelationManagers\InvocationsRelationManager::class,
+        ];
+    }
+
     public static function getPages(): array
     {
         return [
