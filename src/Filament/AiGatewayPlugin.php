@@ -8,6 +8,7 @@ use Andre\AiGateway\Filament\Pages\ApiDocs;
 use Andre\AiGateway\Filament\Pages\ApiTokens;
 use Andre\AiGateway\Filament\Pages\GeneralSettings;
 use Andre\AiGateway\Filament\Resources\AiIntegrationResource;
+use Andre\AiGateway\Filament\Resources\AiInvocationResource;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 
@@ -40,6 +41,10 @@ class AiGatewayPlugin implements Plugin
         $panel
             ->resources([
                 AiIntegrationResource::class,
+                // Top-level Invocations stays for the cross-integration overview
+                // (Σ tokens / Σ cost); per-integration runs also appear as a tab
+                // on each integration via InvocationsRelationManager.
+                AiInvocationResource::class,
             ])
             ->pages([
                 GeneralSettings::class,
