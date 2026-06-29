@@ -42,7 +42,7 @@ class AiInvocationResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return config('ai-gateway.filament.navigation_group', 'AI & Automation');
+        return config('ai-gateway.filament.navigation_group', 'AI Gateway');
     }
 
     public static function getNavigationSort(): ?int

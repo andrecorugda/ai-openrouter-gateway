@@ -232,7 +232,7 @@ return [
     */
 
     'filament' => [
-        'navigation_group' => 'AI & Automation',
+        'navigation_group' => 'AI Gateway',
         'navigation_sort' => 50,
         'cluster' => null,
         // Gate for the whole UI. A closure/invokable or a Gate ability name.
