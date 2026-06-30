@@ -4,11 +4,11 @@
   <img class="filament-hidden" src="art/cover.png" alt="AI OpenRouter Gateway — one OpenRouter key for every model, managed in Filament" width="100%">
 </p>
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/andrecorugda/ai-openrouter-gateway.svg?style=flat-square)](https://packagist.org/packages/andrecorugda/ai-openrouter-gateway)
-[![Total Downloads](https://img.shields.io/packagist/dt/andrecorugda/ai-openrouter-gateway.svg?style=flat-square)](https://packagist.org/packages/andrecorugda/ai-openrouter-gateway)
-[![Tests](https://img.shields.io/github/actions/workflow/status/andrecorugda/ai-openrouter-gateway/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/andrecorugda/ai-openrouter-gateway/actions)
-[![PHP Version](https://img.shields.io/packagist/php-v/andrecorugda/ai-openrouter-gateway.svg?style=flat-square)](https://packagist.org/packages/andrecorugda/ai-openrouter-gateway)
-[![License](https://img.shields.io/packagist/l/andrecorugda/ai-openrouter-gateway.svg?style=flat-square)](LICENSE)
+[<img class="filament-hidden" src="https://img.shields.io/packagist/v/andrecorugda/ai-openrouter-gateway.svg?style=flat-square" alt="Latest Version on Packagist">](https://packagist.org/packages/andrecorugda/ai-openrouter-gateway)
+[<img class="filament-hidden" src="https://img.shields.io/packagist/dt/andrecorugda/ai-openrouter-gateway.svg?style=flat-square" alt="Total Downloads">](https://packagist.org/packages/andrecorugda/ai-openrouter-gateway)
+[<img class="filament-hidden" src="https://img.shields.io/github/actions/workflow/status/andrecorugda/ai-openrouter-gateway/tests.yml?branch=main&label=tests&style=flat-square" alt="Tests">](https://github.com/andrecorugda/ai-openrouter-gateway/actions)
+[<img class="filament-hidden" src="https://img.shields.io/packagist/php-v/andrecorugda/ai-openrouter-gateway.svg?style=flat-square" alt="PHP Version">](https://packagist.org/packages/andrecorugda/ai-openrouter-gateway)
+[<img class="filament-hidden" src="https://img.shields.io/packagist/l/andrecorugda/ai-openrouter-gateway.svg?style=flat-square" alt="License">](LICENSE)
 
 **Manage every AI feature in your Laravel app as a versioned, runtime-tunable integration — one OpenRouter key for every model, behind one service, one audit log, and one cost view.**
 
@@ -44,11 +44,11 @@ Swap `anthropic/claude-sonnet-4` for `openai/gpt-4o` or `google/gemini-2.5-pro` 
 
 ### Who uses it (use cases)
 
-![Use case diagram](screenshots/usecases.png)
+<img class="filament-hidden" src="screenshots/usecases.png" alt="Use case diagram">
 
 ### Architecture
 
-![Architecture diagram](screenshots/architecture.png)
+<img class="filament-hidden" src="screenshots/architecture.png" alt="Architecture diagram">
 
 **Request flow (one call):** resolve the integration's active version (cached) → render the prompt template with the caller's args → enforce rate + daily-cost limits → compose the OpenRouter payload (model[s], params, server tools, optional cache markers) → call OpenRouter → write an `ai_invocations` telemetry row (cost / tokens / latency / status) → return a typed `AiResult`. Conversational calls additionally load and persist thread turns via `ConversationStore`.
 
@@ -244,13 +244,13 @@ You get:
 
 | | |
 |---|---|
-| **Integration form** — catalog model picker, per-model params, caching, prompt editor | ![Create integration](screenshots/integration-edit.png?v=2) |
-| **Integrations list** | ![Integrations](screenshots/integrations-list.png?v=2) |
-| **Invocations** — telemetry with Σ summaries | ![Invocations](screenshots/invocations.png?v=2) |
-| **Invocation detail** — per-call tokens, cost, latency, OpenRouter id | ![Invocation detail](screenshots/invocation-detail.png?v=2) |
-| **Versions** — load a past version into the form | ![Versions](screenshots/modal-versions.png?v=2) |
-| **General settings** | ![General settings](screenshots/general-settings.png?v=2) |
-| **API tokens** — mint scoped tokens; one-time value with one-click copy | ![API tokens](screenshots/api-tokens-created.png?v=2) |
+| **Integration form** — catalog model picker, per-model params, caching, prompt editor | <img class="filament-hidden" src="screenshots/integration-edit.png?v=2" alt="Create integration"> |
+| **Integrations list** | <img class="filament-hidden" src="screenshots/integrations-list.png?v=2" alt="Integrations"> |
+| **Invocations** — telemetry with Σ summaries | <img class="filament-hidden" src="screenshots/invocations.png?v=2" alt="Invocations"> |
+| **Invocation detail** — per-call tokens, cost, latency, OpenRouter id | <img class="filament-hidden" src="screenshots/invocation-detail.png?v=2" alt="Invocation detail"> |
+| **Versions** — load a past version into the form | <img class="filament-hidden" src="screenshots/modal-versions.png?v=2" alt="Versions"> |
+| **General settings** | <img class="filament-hidden" src="screenshots/general-settings.png?v=2" alt="General settings"> |
+| **API tokens** — mint scoped tokens; one-time value with one-click copy | <img class="filament-hidden" src="screenshots/api-tokens-created.png?v=2" alt="API tokens"> |
 
 ## Conversations (multi-turn threads)
 
@@ -297,7 +297,7 @@ The package serves a **live OpenAPI 3 document built from your integrations**, p
 
 Every API-visible integration becomes real endpoints: `POST /{slug}/chat` with a request body shaped from its **declared variables** (types + required flags) and the allow-listed `options`, plus `/{slug}/start` and `/{slug}/converse` when the integration is **conversational**. The model and prompt-caching mode appear in each endpoint's description.
 
-![Interactive API docs inside Filament](screenshots/filament-api-docs.png?v=3)
+<img class="filament-hidden" src="screenshots/filament-api-docs.png?v=3" alt="Interactive API docs inside Filament">
 
 Gate or disable it via `config('ai-gateway.api.docs')` — add `middleware` (e.g. `['auth']`) to make it private, or override `script_src` to self-host the renderer instead of the CDN.
 
