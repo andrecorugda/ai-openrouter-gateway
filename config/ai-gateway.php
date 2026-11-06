@@ -235,8 +235,10 @@ return [
         'navigation_group' => 'AI Gateway',
         'navigation_sort' => 50,
         'cluster' => null,
-        // Gate for the whole UI. A closure/invokable or a Gate ability name.
-        // null = visible to anyone who can access the panel.
+        // Gate for the whole UI, checked on every gateway page and resource:
+        // a Gate ability name (e.g. 'access-ai-gateway'), an invokable class
+        // name, or a closure (closures don't survive `config:cache`).
+        // null = visible to anyone who can access the panel. Fails closed.
         'authorize' => env('AI_GATEWAY_FILAMENT_GATE', null),
     ],
 
