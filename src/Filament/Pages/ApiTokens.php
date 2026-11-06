@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament\Pages;
 
+use Andre\AiGateway\Filament\Concerns\AuthorizesGatewayUi;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -28,6 +29,7 @@ use Throwable;
  */
 class ApiTokens extends Page implements HasTable
 {
+    use AuthorizesGatewayUi;
     use InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-key';
