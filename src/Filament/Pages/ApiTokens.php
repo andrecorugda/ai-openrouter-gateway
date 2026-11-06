@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament\Pages;
 
+use Andre\AiGateway\Filament\Concerns\AuthorizesGatewayUi;
 use Filament\Actions\Action as NotificationAction;
 use Filament\Actions\Action as TableAction;
 use Filament\Forms\Components\Select;
@@ -27,6 +28,7 @@ use Throwable;
  */
 class ApiTokens extends Page implements HasTable
 {
+    use AuthorizesGatewayUi;
     use InteractsWithTable;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-key';

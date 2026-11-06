@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament\Resources;
 
+use Andre\AiGateway\Filament\Concerns\AuthorizesGatewayUi;
 use Andre\AiGateway\Filament\Forms\Components\PromptComposer;
 use Andre\AiGateway\Filament\Resources\AiIntegrationResource\Pages;
 use Andre\AiGateway\Models\AiIntegration;
@@ -45,6 +46,8 @@ use Throwable;
  */
 class AiIntegrationResource extends Resource
 {
+    use AuthorizesGatewayUi;
+
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-sparkles';
 
     public static function getModel(): string

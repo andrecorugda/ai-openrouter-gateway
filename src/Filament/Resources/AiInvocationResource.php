@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament\Resources;
 
+use Andre\AiGateway\Filament\Concerns\AuthorizesGatewayUi;
 use Andre\AiGateway\Models\AiInvocation;
 use Filament\Actions\ViewAction;
 use Filament\Forms;
@@ -22,6 +23,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class AiInvocationResource extends Resource
 {
+    use AuthorizesGatewayUi;
+
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar';
 
     public static function getModel(): string

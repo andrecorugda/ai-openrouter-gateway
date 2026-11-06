@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament\Pages;
 
+use Andre\AiGateway\Filament\Concerns\AuthorizesGatewayUi;
 use Andre\AiGateway\Services\OpenRouterModelCatalog;
 use Andre\AiGateway\Support\Settings;
 use Filament\Forms\Components\Select;
@@ -25,6 +26,7 @@ use Filament\Schemas\Schema;
  */
 class GeneralSettings extends Page implements HasForms
 {
+    use AuthorizesGatewayUi;
     use InteractsWithForms;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';

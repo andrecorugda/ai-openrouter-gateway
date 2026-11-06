@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Andre\AiGateway\Filament\Pages;
 
+use Andre\AiGateway\Filament\Concerns\AuthorizesGatewayUi;
 use Andre\AiGateway\Support\Settings;
 use Filament\Pages\Page;
 
@@ -16,6 +17,8 @@ use Filament\Pages\Page;
  */
 class ApiDocs extends Page
 {
+    use AuthorizesGatewayUi;
+
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-book-open';
 
     protected string $view = 'ai-gateway::filament.pages.api-docs';
@@ -34,7 +37,9 @@ class ApiDocs extends Page
 
     public static function canAccess(): bool
     {
-        return Settings::bool('api_enabled') && (bool) config('ai-gateway.api.docs.enabled', true);
+        return static::passesGatewayGate()
+            && Settings::bool('api_enabled')
+            && (bool) config('ai-gateway.api.docs.enabled', true);
     }
 
     /** Built from config so it doesn't depend on the named route being registered. */
