@@ -5,6 +5,11 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-11-07
+
+### Security
+- **The admin UI now enforces `filament.authorize`** ([GHSA-57hh-5c98-83r8](https://github.com/andrecorugda/ai-openrouter-gateway/security/advisories/GHSA-57hh-5c98-83r8), high). The setting was documented as the gate for the whole gateway UI but was never checked, so any user who could sign in to the Filament panel could open every gateway screen: create API tokens, change prompts, models and settings, and read invocation logs. Every gateway page and resource now checks the gate on top of Filament's own checks (a resource still applies your model policy). The value can be a Gate ability name, an invokable class name (works with `config:cache`) or a closure; `null` or an empty value keeps the panel-wide default, and anything else denies. **If you set `AI_GATEWAY_FILAMENT_GATE`, upgrade.** Reported and fixed by [Joshua van der Poll](https://github.com/joshuavanderpoll), thank you!
+
 ## [1.3.2] - 2026-06-27
 
 ### Added

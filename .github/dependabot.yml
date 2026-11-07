@@ -16,6 +16,10 @@ updates:
   - package-ecosystem: composer
     directory: /
     versioning-strategy: widen
+    ignore:
+      # develop/main are the Filament 3 line (1.x); Filament 4/5 live on 2.x.
+      - dependency-name: "filament/*"
+        update-types: ["version-update:semver-major"]
     schedule:
       interval: weekly
     cooldown:
@@ -36,6 +40,10 @@ updates:
     directory: /
     target-branch: "2.x"
     versioning-strategy: widen
+    ignore:
+      # A new Filament major needs its own release line, not a constraint bump.
+      - dependency-name: "filament/*"
+        update-types: ["version-update:semver-major"]
     schedule:
       interval: weekly
     cooldown:
