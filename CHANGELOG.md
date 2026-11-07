@@ -5,6 +5,18 @@ All notable changes to `ai-openrouter-gateway` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.4] - 2026-11-07
+
+### Security (supply chain)
+- CI actions are pinned to commit SHAs and the workflow token is read-only.
+- Dependabot keeps actions and Composer constraints current, with a 7-day cooldown.
+- Added [SECURITY.md](SECURITY.md): supported versions and private reporting through GitHub Security Advisories.
+
+### Changed
+- The Composer archive now ships only runtime files (tests, CI, art and screenshots are excluded).
+
+No runtime code changes from 1.3.3.
+
 ## [1.3.3] - 2026-11-07
 
 ### Security
